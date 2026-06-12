@@ -2,7 +2,6 @@ package dev.ryanhcode.sable.neoforge.platform;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import dev.ryanhcode.sable.neoforge.compatibility.flywheel.FlywheelCompatNeoForge;
 import dev.ryanhcode.sable.platform.SableSubLevelRenderPlatform;
 import dev.ryanhcode.sable.sublevel.render.vanilla.SingleBlockSubLevelWrapper;
 import net.minecraft.client.Minecraft;
@@ -33,8 +32,6 @@ public class SableSubLevelRenderPlatformImpl implements SableSubLevelRenderPlatf
 
     @Override
     public void tryAddFlywheelVisual(final BlockEntity blockEntity) {
-        if (FlywheelCompatNeoForge.FLYWHEEL_LOADED) {
-            FlywheelCompatNeoForge.tryAddVisual(blockEntity);
-        }
+        // Flywheel compat stripped on the mc26.1 port branch (no 26.1 build).
     }
 }
