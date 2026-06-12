@@ -1,38 +1,68 @@
 package dev.ryanhcode.sable.network.tcp;
 
-import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.network.packets.ClientboundSableSnapshotDualPacket;
 import dev.ryanhcode.sable.network.packets.ClientboundSableSnapshotInfoDualPacket;
 import dev.ryanhcode.sable.network.packets.tcp.*;
-import foundry.veil.api.network.VeilPacketManager;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Declarative registry of Sable's TCP payloads.
+ *
+ * <p>De-Veiled on the mc26.1 port branch: Veil's {@code VeilPacketManager} is
+ * replaced by loader-side registration — the NeoForge module reads
+ * {@link #entries()} during its payload-registration event and adapts the
+ * loader context to {@link SablePacketContext}.
+ */
 public class SableTCPPackets {
 
-    private static final VeilPacketManager PACKET_MANAGER = VeilPacketManager.create(Sable.MOD_ID, "1");
+    public record Entry<T extends SableTCPPacket>(CustomPacketPayload.Type<T> type,
+                                                  StreamCodec<? super RegistryFriendlyByteBuf, T> codec,
+                                                  boolean clientbound) {
+    }
+
+    private static final List<Entry<?>> ENTRIES = new ArrayList<>();
 
     public static void init() {
-        PACKET_MANAGER.registerClientbound(ClientboundSableSnapshotDualPacket.TYPE, ClientboundSableSnapshotDualPacket.CODEC, ClientboundSableSnapshotDualPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundSableSnapshotInfoDualPacket.TYPE, ClientboundSableSnapshotInfoDualPacket.CODEC, ClientboundSableSnapshotInfoDualPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundStopMovingSubLevelPacket.TYPE, ClientboundStopMovingSubLevelPacket.CODEC, ClientboundStopMovingSubLevelPacket::handle);
+        clientbound(ClientboundSableSnapshotDualPacket.TYPE, ClientboundSableSnapshotDualPacket.CODEC);
+        clientbound(ClientboundSableSnapshotInfoDualPacket.TYPE, ClientboundSableSnapshotInfoDualPacket.CODEC);
+        clientbound(ClientboundStopMovingSubLevelPacket.TYPE, ClientboundStopMovingSubLevelPacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundChangeSubLevelNamePacket.TYPE, ClientboundChangeSubLevelNamePacket.CODEC, ClientboundChangeSubLevelNamePacket::handle);
+        clientbound(ClientboundChangeSubLevelNamePacket.TYPE, ClientboundChangeSubLevelNamePacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundStartTrackingSubLevelPacket.TYPE, ClientboundStartTrackingSubLevelPacket.CODEC, ClientboundStartTrackingSubLevelPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundFinalizeSubLevelPacket.TYPE, ClientboundFinalizeSubLevelPacket.CODEC, ClientboundFinalizeSubLevelPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundStopTrackingSubLevelPacket.TYPE, ClientboundStopTrackingSubLevelPacket.CODEC, ClientboundStopTrackingSubLevelPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundChangeBoundsSubLevelPacket.TYPE, ClientboundChangeBoundsSubLevelPacket.CODEC, ClientboundChangeBoundsSubLevelPacket::handle);
+        clientbound(ClientboundStartTrackingSubLevelPacket.TYPE, ClientboundStartTrackingSubLevelPacket.CODEC);
+        clientbound(ClientboundFinalizeSubLevelPacket.TYPE, ClientboundFinalizeSubLevelPacket.CODEC);
+        clientbound(ClientboundStopTrackingSubLevelPacket.TYPE, ClientboundStopTrackingSubLevelPacket.CODEC);
+        clientbound(ClientboundChangeBoundsSubLevelPacket.TYPE, ClientboundChangeBoundsSubLevelPacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundFreezePlayerPacket.TYPE, ClientboundFreezePlayerPacket.CODEC, ClientboundFreezePlayerPacket::handle);
+        clientbound(ClientboundFreezePlayerPacket.TYPE, ClientboundFreezePlayerPacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundPhysicsPropertyPacket.TYPE, ClientboundPhysicsPropertyPacket.CODEC, ClientboundPhysicsPropertyPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundFloatingBlockMaterialPacket.TYPE, ClientboundFloatingBlockMaterialPacket.CODEC, ClientboundFloatingBlockMaterialPacket::handle);
-        PACKET_MANAGER.registerClientbound(ClientboundRecentlySplitSubLevelPacket.TYPE, ClientboundRecentlySplitSubLevelPacket.CODEC, ClientboundRecentlySplitSubLevelPacket::handle);
+        clientbound(ClientboundPhysicsPropertyPacket.TYPE, ClientboundPhysicsPropertyPacket.CODEC);
+        clientbound(ClientboundFloatingBlockMaterialPacket.TYPE, ClientboundFloatingBlockMaterialPacket.CODEC);
+        clientbound(ClientboundRecentlySplitSubLevelPacket.TYPE, ClientboundRecentlySplitSubLevelPacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundSableUDPActivationPacket.TYPE, ClientboundSableUDPActivationPacket.CODEC, ClientboundSableUDPActivationPacket::handle);
+        clientbound(ClientboundSableUDPActivationPacket.TYPE, ClientboundSableUDPActivationPacket.CODEC);
 
-        PACKET_MANAGER.registerClientbound(ClientboundEnterGizmoPacket.TYPE, ClientboundEnterGizmoPacket.CODEC, ClientboundEnterGizmoPacket::handle);
+        clientbound(ClientboundEnterGizmoPacket.TYPE, ClientboundEnterGizmoPacket.CODEC);
 
-        PACKET_MANAGER.registerServerbound(ServerboundPunchSubLevelPacket.TYPE, ServerboundPunchSubLevelPacket.CODEC, ServerboundPunchSubLevelPacket::handle);
-        PACKET_MANAGER.registerServerbound(ServerboundGizmoMoveSubLevelPacket.TYPE, ServerboundGizmoMoveSubLevelPacket.CODEC, ServerboundGizmoMoveSubLevelPacket::handle);
+        serverbound(ServerboundPunchSubLevelPacket.TYPE, ServerboundPunchSubLevelPacket.CODEC);
+        serverbound(ServerboundGizmoMoveSubLevelPacket.TYPE, ServerboundGizmoMoveSubLevelPacket.CODEC);
+    }
+
+    public static List<Entry<?>> entries() {
+        return Collections.unmodifiableList(ENTRIES);
+    }
+
+    private static <T extends SableTCPPacket> void clientbound(final CustomPacketPayload.Type<T> type, final StreamCodec<? super RegistryFriendlyByteBuf, T> codec) {
+        ENTRIES.add(new Entry<>(type, codec, true));
+    }
+
+    private static <T extends SableTCPPacket> void serverbound(final CustomPacketPayload.Type<T> type, final StreamCodec<? super RegistryFriendlyByteBuf, T> codec) {
+        ENTRIES.add(new Entry<>(type, codec, false));
     }
 }

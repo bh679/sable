@@ -121,7 +121,7 @@ public abstract class LocalPlayerMixin extends Player {
         final Entity vehicle = this.getVehicle();
         super.stopRiding();
 
-        if (this.level().isClientSide && vehicle != null && vehicle != this.getVehicle() && Sable.HELPER.getContaining(vehicle) != null) {
+        if (this.level().isClientSide() && vehicle != null && vehicle != this.getVehicle() && Sable.HELPER.getContaining(vehicle) != null) {
             this.sable$dismountVehicle(vehicle);
         }
     }

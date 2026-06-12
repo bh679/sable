@@ -24,7 +24,7 @@ public abstract class EntityMixin {
     private void sable$load(final CompoundTag compoundTag, final CallbackInfo ci) {
         if (compoundTag.contains("LoginPoint")) {
             final SubLevelTrackingPointSavedData data = SubLevelTrackingPointSavedData.getOrLoad((ServerLevel) this.level);
-            final SubLevelTrackingPointSavedData.TakenLoginPoint point = data.take(compoundTag.getUUID("LoginPoint"), true);
+            final SubLevelTrackingPointSavedData.TakenLoginPoint point = data.take(compoundTag.read("LoginPoint", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), true);
 
             if (point != null) {
                 final Vector3dc position = point.position();

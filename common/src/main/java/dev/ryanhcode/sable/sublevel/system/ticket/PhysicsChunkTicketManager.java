@@ -110,7 +110,7 @@ public class PhysicsChunkTicketManager {
 
             for (int x = chunkBounds.minX(); x <= chunkBounds.maxX(); x++) {
                 for (int z = chunkBounds.minZ(); z <= chunkBounds.maxZ(); z++) {
-                    final long l = ChunkPos.asLong(x, z);
+                    final long l = ChunkPos.pack(x, z);
 
                     if (!isChunkLoadedEnough(level, x, z) || unloadedChunks.contains(l)) {
                         arbitraryObject.onUnloaded(holdingChunkMap, new ChunkPos(x, z));
@@ -160,7 +160,7 @@ public class PhysicsChunkTicketManager {
 
             for (int x = chunkBounds.minX(); x <= chunkBounds.maxX(); x++) {
                 for (int z = chunkBounds.minZ(); z <= chunkBounds.maxZ(); z++) {
-                    final long chunkLong = ChunkPos.asLong(x, z);
+                    final long chunkLong = ChunkPos.pack(x, z);
 
                     final boolean chunkLoadedEnough = isChunkLoadedEnough(level, x, z);
 
@@ -433,6 +433,6 @@ public class PhysicsChunkTicketManager {
         }
 
         final DistanceManager distanceManager = level.getChunkSource().chunkMap.getDistanceManager();
-        return distanceManager.inBlockTickingRange(ChunkPos.asLong(x, z));
+        return distanceManager.inBlockTickingRange(ChunkPos.pack(x, z));
     }
 }

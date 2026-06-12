@@ -6,7 +6,7 @@ import dev.ryanhcode.sable.mixinterface.udp.ConnectionExtension;
 import dev.ryanhcode.sable.network.packets.udp.SableUDPAuthenticationPacket;
 import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
 import dev.ryanhcode.sable.network.udp.AddressedSableUDPPacket;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -39,7 +39,7 @@ public record ClientboundSableUDPActivationPacket(UUID uuid) implements SableTCP
     }
 
     @Override
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         if (!SableClientConfig.ATTEMPT_UDP_NETWORKING.get()) {
             Sable.LOGGER.info("Received UDP authentication request, ignoring due to disabled attempt_udp_networking config");
             return;

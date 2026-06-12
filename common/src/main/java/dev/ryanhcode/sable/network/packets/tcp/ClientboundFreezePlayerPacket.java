@@ -4,7 +4,7 @@ import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.mixinterface.player_freezing.PlayerFreezeExtension;
 import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
 import dev.ryanhcode.sable.util.SableBufferUtils;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -35,7 +35,7 @@ public record ClientboundFreezePlayerPacket(UUID subLevelID, Vector3dc localPosi
     }
 
     @Override
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         final Player player = context.player();
         assert player != null;
 

@@ -35,8 +35,8 @@ public class LevelAccelerator implements BlockGetter {
 
     public LevelAccelerator(final Level level) {
         this.level = level;
-        this.minBuildHeight = level.getMinBuildHeight();
-        this.maxBuildHeight = level.getMaxBuildHeight();
+        this.minBuildHeight = level.getMinY();
+        this.maxBuildHeight = (level.getMaxY() + 1);
         this.minSection = level.getMinSection();
     }
 
@@ -95,7 +95,7 @@ public class LevelAccelerator implements BlockGetter {
     }
 
     public LevelChunk getChunk(final int chunkX, final int chunkZ) {
-        final long pos = ChunkPos.asLong(chunkX, chunkZ);
+        final long pos = ChunkPos.pack(chunkX, chunkZ);
 
         if (pos == this.cachedChunkPos && this.cachedChunkObj != null) {
             return this.cachedChunkObj;
@@ -116,7 +116,7 @@ public class LevelAccelerator implements BlockGetter {
     }
 
     private @NotNull LevelChunk grabChunkFast(final int chunkX, final int chunkZ, final long pos) {
-        if (this.level.isClientSide) {
+        if (this.level.isClientSide()) {
             return this.level.getChunk(chunkX, chunkZ);
         }
 

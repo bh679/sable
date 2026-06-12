@@ -54,28 +54,28 @@ public class SubLevelTrackingPointSavedData extends SavedData implements SubLeve
     private static SubLevelTrackingPointSavedData load(final ServerLevel level, final CompoundTag tag) {
         final SubLevelTrackingPointSavedData data = new SubLevelTrackingPointSavedData(level);
 
-        final CompoundTag trackingPointsTag = tag.getCompound("tracking_points");
+        final CompoundTag trackingPointsTag = tag.getCompoundOrEmpty("tracking_points");
 
-        for (final String key : trackingPointsTag.getAllKeys()) {
+        for (final String key : trackingPointsTag.keySet()) {
             final UUID uuid = UUID.fromString(key);
-            final CompoundTag pointTag = trackingPointsTag.getCompound(key);
+            final CompoundTag pointTag = trackingPointsTag.getCompoundOrEmpty(key);
 
             final boolean inSubLevel = pointTag.getBoolean("InSubLevel");
             final GlobalSavedSubLevelPointer pointer = pointTag.contains("SubLevelPointer") ?
-                    GlobalSavedSubLevelPointer.CODEC.parse(NbtOps.INSTANCE, pointTag.getCompound("SubLevelPointer")).getOrThrow() :
+                    GlobalSavedSubLevelPointer.CODEC.parse(NbtOps.INSTANCE, pointTag.getCompoundOrEmpty("SubLevelPointer")).getOrThrow() :
                     null;
-            final Vector3d point = SableNBTUtils.readVector3d(pointTag.getCompound("Point"));
+            final Vector3d point = SableNBTUtils.readVector3d(pointTag.getCompoundOrEmpty("Point"));
 
             Vector3d globalPlaceholder = null;
 
             if (pointTag.contains("GlobalPlaceholder")) {
-                globalPlaceholder = SableNBTUtils.readVector3d(pointTag.getCompound("GlobalPlaceholder"));
+                globalPlaceholder = SableNBTUtils.readVector3d(pointTag.getCompoundOrEmpty("GlobalPlaceholder"));
             }
 
             UUID subLevelID = null;
 
             if (pointTag.contains("SubLevelID")) {
-                subLevelID = pointTag.getUUID("SubLevelID");
+                subLevelID = pointTag.read("SubLevelID", net.minecraft.core.UUIDUtil.CODEC).orElseThrow();
             }
 
             final TrackingPoint trackingPoint = new TrackingPoint(inSubLevel, subLevelID, pointer, point, globalPlaceholder);
@@ -107,7 +107,7 @@ public class SubLevelTrackingPointSavedData extends SavedData implements SubLeve
             }
 
             if (trackingPoint.subLevelID() != null) {
-                pointTag.putUUID("SubLevelID", trackingPoint.subLevelID());
+                pointTag.store("SubLevelID", net.minecraft.core.UUIDUtil.CODEC, trackingPoint.subLevelID());
             }
 
             loginPointsTag.put(entry.getKey().toString(), pointTag);

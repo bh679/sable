@@ -51,6 +51,6 @@ public final class PhysicsColliderBlockGetter implements BlockGetter {
 
     @Override
     public int getMinBuildHeight() {
-        return this.level.getMinBuildHeight();
+        return this.level.getMinY();
     }
 }

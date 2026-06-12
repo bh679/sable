@@ -3,8 +3,6 @@ package dev.ryanhcode.sable.mixin;
 import com.mojang.logging.LogUtils;
 import dev.ryanhcode.sable.annotation.MixinModVersionConstraint;
 import dev.ryanhcode.sable.platform.SableLoaderPlatform;
-import foundry.veil.Veil;
-import foundry.veil.api.compat.SodiumCompat;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -28,13 +26,11 @@ import java.util.Set;
 public abstract class AbstractSableMixinPlugin implements IMixinConfigPlugin {
     public static final Logger LOGGER = LogUtils.getLogger();
     private final Object2BooleanMap<String> modLoadedCache = new Object2BooleanOpenHashMap<>();
-    private boolean sodiumPresent;
 
     @Override
     public void onLoad(final String mixinPackage) {
-        this.sodiumPresent = SodiumCompat.isLoaded();
-
-        LOGGER.info("Using {} renderer mixins", this.sodiumPresent ? "Sodium" : "Vanilla");
+        // mc26.1 port branch: Sodium compat stripped — vanilla renderer mixins only.
+        LOGGER.info("Using Vanilla renderer mixins");
     }
 
     @Override
@@ -46,7 +42,8 @@ public abstract class AbstractSableMixinPlugin implements IMixinConfigPlugin {
     public boolean shouldApplyMixin(final String targetClassName, final String mixinClassName) {
         // TODO: Housekeeping
         if (mixinClassName.startsWith("dev.ryanhcode.sable.mixin.sublevel_render.impl")) {
-            return this.sodiumPresent ? mixinClassName.startsWith("dev.ryanhcode.sable.mixin.sublevel_render.impl.sodium") : mixinClassName.startsWith("dev.ryanhcode.sable.mixin.sublevel_render.impl.vanilla");
+            // mc26.1 port branch: only the vanilla renderer impl exists.
+            return mixinClassName.startsWith("dev.ryanhcode.sable.mixin.sublevel_render.impl.vanilla");
         }
 
         if (mixinClassName.startsWith("dev.ryanhcode.sable.mixin.compatibility.") ||
@@ -59,8 +56,8 @@ public abstract class AbstractSableMixinPlugin implements IMixinConfigPlugin {
             }
 
             final String modId = parts[3].equals("mixin") ? parts[5] : parts[6];
-            
-            final boolean isModLoaded = this.modLoadedCache.computeIfAbsent(modId, x -> Veil.platform().isModLoaded(modId));
+
+            final boolean isModLoaded = this.modLoadedCache.computeIfAbsent(modId, x -> SableLoaderPlatform.INSTANCE.isModLoaded(modId));
             return isModLoaded && MixinConstraints.handleClassAnnotation(mixinClassName, modId);
         }
 

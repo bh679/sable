@@ -1,18 +1,7 @@
 package dev.ryanhcode.sable;
 
-import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
-import dev.ryanhcode.sable.mixin.config.GameRendererAccessor;
-import dev.ryanhcode.sable.mixinterface.plot.SubLevelContainerHolder;
-import dev.ryanhcode.sable.render.dynamic_shade.SableDynamicDirectionalShading;
-import dev.ryanhcode.sable.render.sky_light_shadow.SableSkyLightShadows;
-import dev.ryanhcode.sable.render.water_occlusion.WaterOcclusionRenderer;
-import dev.ryanhcode.sable.sublevel.ClientSubLevel;
-import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.render.SubLevelRenderer;
-import foundry.veil.Veil;
-import foundry.veil.api.client.render.VeilRenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -46,7 +35,7 @@ public final class SableClientConfig {
                 .define("sub_level_skylight_shadows", false);
         DEBUG_DRAW_LOADED_CHUNKS = builder
                 .comment("Whether to draw loaded chunks on the client in the chunk debug renderer")
-                .define("debug_draw_loaded_chunks", Veil.platform().isDevelopmentEnvironment());
+                .define("debug_draw_loaded_chunks", false);
         INTERPOLATION_DELAY = builder
                 .comment("The distance back in game-ticks that the snapshot interpolation should operate")
                 .defineInRange("sub_level_snapshot_interpolation_delay_ticks", 1.5, 0.0, 100.0);
@@ -67,44 +56,10 @@ public final class SableClientConfig {
 
     @ApiStatus.Internal
     public static void onUpdate(final boolean notify) {
-        boolean reloadShaders = false;
-        boolean reloadChunks = false;
-
-        if (SableDynamicDirectionalShading.isEnabled() != SableClientConfig.SUB_LEVEL_DYNAMIC_SHADING.getAsBoolean()) {
-            SableDynamicDirectionalShading.setIsEnabled(SableClientConfig.SUB_LEVEL_DYNAMIC_SHADING.getAsBoolean());
-            reloadShaders = true;
-            reloadChunks = true;
-        }
-
-        if (SableSkyLightShadows.isEnabled() != SableClientConfig.SUB_LEVEL_SKYLIGHT_SHADOWS.getAsBoolean()) {
-            SableSkyLightShadows.setIsEnabled(SableClientConfig.SUB_LEVEL_SKYLIGHT_SHADOWS.getAsBoolean());
-            reloadShaders = true;
-        }
-
-        if (WaterOcclusionRenderer.isEnabled() != SableClientConfig.SUB_LEVEL_WATER_OCCLUSION.getAsBoolean()) {
-            WaterOcclusionRenderer.setIsEnabled(SableClientConfig.SUB_LEVEL_WATER_OCCLUSION.getAsBoolean());
-            reloadShaders = true;
-        }
-
+        // mc26.1 port branch: the dynamic-shading / sky-light-shadow /
+        // water-occlusion toggles no longer drive anything (Veil shader
+        // features stripped); the options are kept so existing config files
+        // load unchanged. Only the renderer selection remains live.
         Minecraft.getInstance().execute(() -> SubLevelRenderer.setImpl(SableClientConfig.SELECTED_RENDERER.get()));
-
-        if (notify) {
-            if (reloadShaders) {
-                VeilRenderSystem.renderer().getVanillaShaderCompiler().reload(((GameRendererAccessor) Minecraft.getInstance().gameRenderer).getShaders().values());
-            }
-
-            if (reloadChunks) {
-                Minecraft.getInstance().execute(() -> {
-                    VeilRenderSystem.rebuildChunks();
-                    final ClientLevel level = Minecraft.getInstance().level;
-                    if (level != null) {
-                        final SubLevelContainer plotContainer = ((SubLevelContainerHolder) level).sable$getPlotContainer();
-                        for (final SubLevel sublevel : plotContainer.getAllSubLevels()) {
-                            ((ClientSubLevel) sublevel).getRenderData().rebuild();
-                        }
-                    }
-                });
-            }
-        }
     }
 }

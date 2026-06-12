@@ -8,7 +8,7 @@ import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.util.SableBufferUtils;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -27,7 +27,7 @@ public record ClientboundRecentlySplitSubLevelPacket(UUID splitSubLevelID, UUID 
             ClientboundRecentlySplitSubLevelPacket::pose,
             ClientboundRecentlySplitSubLevelPacket::new);
 
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         final SubLevelContainer container = SubLevelContainer.getContainer(context.level());
         if (container instanceof final ClientSubLevelContainer clientContainer) {
             final SubLevel subLevel = container.getSubLevel(this.splitSubLevelID);

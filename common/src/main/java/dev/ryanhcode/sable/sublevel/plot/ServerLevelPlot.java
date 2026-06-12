@@ -27,7 +27,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.*;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -409,7 +409,7 @@ public class ServerLevelPlot extends LevelPlot {
             SablePlotPlatform.INSTANCE.writeLightData(tag, level.registryAccess(), chunk);
             SablePlotPlatform.INSTANCE.writeChunkAttachments(tag, level.registryAccess(), chunk);
 
-            chunks.put(String.valueOf(ChunkPos.asLong(local.x, local.z)), chunkTag);
+            chunks.put(String.valueOf(ChunkPos.pack(local.x, local.z)), chunkTag);
         }
 
         tag.put("chunks", chunks);
@@ -434,15 +434,15 @@ public class ServerLevelPlot extends LevelPlot {
         final ServerLevel level = subLevel.getLevel();
 
         if (tag.contains("biome")) {
-            final ResourceLocation location = ResourceLocation.tryParse(tag.getString("biome"));
+            final Identifier location = Identifier.tryParse(tag.getString("biome"));
 
             if (location != null) {
                 this.biome = ResourceKey.create(Registries.BIOME, location);
             }
         }
 
-        final CompoundTag chunks = tag.getCompound("chunks");
-        for (final String key : chunks.getAllKeys()) {
+        final CompoundTag chunks = tag.getCompoundOrEmpty("chunks");
+        for (final String key : chunks.keySet()) {
             final long chunkPos = Long.parseLong(key);
 
             final int x = ChunkPos.getX(chunkPos);
@@ -450,23 +450,23 @@ public class ServerLevelPlot extends LevelPlot {
             final ChunkPos local = new ChunkPos(x, z);
             final ChunkPos global = this.toGlobal(local);
 
-            final CompoundTag chunkTag = chunks.getCompound(key);
-            final CompoundTag sectionsTag = chunkTag.getCompound("sections");
+            final CompoundTag chunkTag = chunks.getCompoundOrEmpty(key);
+            final CompoundTag sectionsTag = chunkTag.getCompoundOrEmpty("sections");
 
             this.newNonLitChunk(global);
             final LevelChunk chunk = this.getChunk(local);
 
             boolean hasLit = false;
-            for (final String sectionKey : sectionsTag.getAllKeys()) {
+            for (final String sectionKey : sectionsTag.keySet()) {
                 final int yIndex = Integer.parseInt(sectionKey);
 
 
                 final LevelChunkSection[] sections = chunk.getSections();
 
                 final PalettedContainer<BlockState> palettedContainer;
-                final CompoundTag sectionTag = sectionsTag.getCompound(sectionKey);
+                final CompoundTag sectionTag = sectionsTag.getCompoundOrEmpty(sectionKey);
 
-                palettedContainer = BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, sectionTag.getCompound("block_states"))
+                palettedContainer = BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, sectionTag.getCompoundOrEmpty("block_states"))
                         .promotePartial(string -> logLoadingErrors(new ChunkPos(chunkPos), chunk.getSectionYFromSectionIndex(yIndex), string))
                         .getOrThrow(ChunkSerializer.ChunkReadException::new);
 
@@ -497,10 +497,10 @@ public class ServerLevelPlot extends LevelPlot {
 
             if (dataVersion >= 0) {
                 final LevelChunkTicks<Block> blockTicks = LevelChunkTicks.load(
-                        chunkTag.getList("block_ticks", Tag.TAG_COMPOUND), id -> BuiltInRegistries.BLOCK.getOptional(ResourceLocation.tryParse(id)), global
+                        chunkTag.getListOrEmpty("block_ticks"), id -> BuiltInRegistries.BLOCK.getOptional(Identifier.tryParse(id)), global
                 );
                 final LevelChunkTicks<Fluid> fluidTicks = LevelChunkTicks.load(
-                        chunkTag.getList("fluid_ticks", Tag.TAG_COMPOUND), id -> BuiltInRegistries.FLUID.getOptional(ResourceLocation.tryParse(id)), global
+                        chunkTag.getListOrEmpty("fluid_ticks"), id -> BuiltInRegistries.FLUID.getOptional(Identifier.tryParse(id)), global
                 );
 
                 //noinspection unchecked
@@ -508,7 +508,7 @@ public class ServerLevelPlot extends LevelPlot {
                 //noinspection unchecked
                 ((LevelChunkTicksExtension<Fluid>) chunk.getFluidTicks()).sable$copy(fluidTicks);
 
-                final CompoundTag heightMapsTag = chunkTag.getCompound("heightmaps");
+                final CompoundTag heightMapsTag = chunkTag.getCompoundOrEmpty("heightmaps");
                 final EnumSet<Heightmap.Types> enumset = EnumSet.noneOf(Heightmap.Types.class);
 
                 for (final Heightmap.Types heightMapType : chunk.getPersistedStatus().heightmapsAfter()) {
@@ -532,11 +532,11 @@ public class ServerLevelPlot extends LevelPlot {
 
             SablePlotPlatform.INSTANCE.readChunkAttachments(chunkTag, level.registryAccess(), chunk);
 
-            final ListTag blockEntitiesTag = chunkTag.getList("block_entities", 10);
+            final ListTag blockEntitiesTag = chunkTag.getListOrEmpty("block_entities");
 
             // Add block entities
             for (int i = 0; i < blockEntitiesTag.size(); i++) {
-                final CompoundTag blockEntityTag = blockEntitiesTag.getCompound(i);
+                final CompoundTag blockEntityTag = blockEntitiesTag.getCompoundOrEmpty(i);
                 final boolean keepBlockEntityPacked = blockEntityTag.getBoolean("keepPacked");
 
                 if (keepBlockEntityPacked) {
@@ -567,7 +567,7 @@ public class ServerLevelPlot extends LevelPlot {
         final BlockPos.MutableBlockPos globalBlockPos = new BlockPos.MutableBlockPos();
 
         // go through them all again
-        for (final String key : chunks.getAllKeys()) {
+        for (final String key : chunks.keySet()) {
             final long chunkPos = Long.parseLong(key);
 
             final int x = ChunkPos.getX(chunkPos);
@@ -628,7 +628,7 @@ public class ServerLevelPlot extends LevelPlot {
         subLevel.updateMergedMassData(1.0f);
         physicsSystem.getPipeline().onStatsChanged(subLevel);
 
-        for (final String key : chunks.getAllKeys()) {
+        for (final String key : chunks.keySet()) {
             final long chunkPos = Long.parseLong(key);
 
             final int x = ChunkPos.getX(chunkPos);

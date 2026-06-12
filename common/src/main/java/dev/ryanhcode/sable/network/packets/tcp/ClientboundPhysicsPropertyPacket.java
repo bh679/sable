@@ -4,7 +4,7 @@ import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
 import dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertiesDefinition;
 import dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertiesDefinitionLoader;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.StreamCodec;
@@ -19,7 +19,7 @@ public record ClientboundPhysicsPropertyPacket(PhysicsBlockPropertiesDefinition 
     );
 
     @Override
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         Minecraft.getInstance().execute(() -> {
             PhysicsBlockPropertiesDefinitionLoader.applyToBlocks(this.definition);
         });

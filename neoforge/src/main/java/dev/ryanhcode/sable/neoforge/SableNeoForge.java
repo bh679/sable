@@ -32,6 +32,7 @@ public final class SableNeoForge {
         neoBus.addListener(this::registerCommand);
         neoBus.addListener(this::registerReloadListeners);
         modBus.addListener(this::serverSetup);
+        modBus.addListener(SableNeoForgePackets::register);
         neoBus.addListener(this::syncDataPack);
 
         SubLevelSelectorModifiers.registerModifiers();
@@ -61,6 +62,10 @@ public final class SableNeoForge {
     }
 
     private void syncDataPack(final OnDatapackSyncEvent event) {
-        SableCommonEvents.syncDataPacket(packet -> event.getRelevantPlayers().forEach(player -> player.connection.send(packet)));
+        SableCommonEvents.syncDataPacket(payloads -> event.getRelevantPlayers().forEach(player -> {
+            for (final var payload : payloads) {
+                player.connection.send(payload);
+            }
+        }));
     }
 }

@@ -2,7 +2,7 @@ package dev.ryanhcode.sable.sublevel.plot;
 
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.*;
@@ -99,7 +99,7 @@ public class PlotChunkHolder extends ChunkHolder {
      * Handles a block change to update bounding box and collision data
      */
     public void handleBlockChange(final int x, final int y, final int z, final BlockState oldState, final BlockState newState) {
-        if (this.chunk.getLevel().isClientSide) return;
+        if (this.chunk.getLevel().isClientSide()) return;
         if (oldState.isAir() && !newState.isAir()) {
             // block placed, expand or create bounding box
             if (this.boundingBox == null) {

@@ -7,7 +7,7 @@ import dev.ryanhcode.sable.mixinterface.loaded_chunk_debug.DebugLevelChunkExtens
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
@@ -27,8 +27,8 @@ public class SableChunkDebugRenderer {
         final Matrix4f pose = poseStack.last().pose();
 
         final ClientLevel level = minecraft.level;
-        final int minBuildHeight = level.getMinBuildHeight();
-        final int maxBuildHeight = level.getMaxBuildHeight();
+        final int minBuildHeight = level.getMinY();
+        final int maxBuildHeight = (level.getMaxY() + 1);
 
         final DebugChunkProviderAttachments attachments = (DebugChunkProviderAttachments) level.getChunkSource();
         for (final LevelChunk chunk : attachments.sable$loadedChunks()) {

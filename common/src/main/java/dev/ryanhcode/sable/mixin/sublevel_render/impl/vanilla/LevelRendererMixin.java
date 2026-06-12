@@ -17,7 +17,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.PrioritizeChunkUpdates;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.LevelRenderer;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.chunk.RenderRegionCache;
 import net.minecraft.client.renderer.culling.Frustum;
@@ -67,7 +67,7 @@ public abstract class LevelRendererMixin {
         final SubLevelRenderDispatcher dispatcher = SubLevelRenderDispatcher.get();
         dispatcher.preRenderChunks(camera);
 
-        final ProfilerFiller profiler = this.minecraft.getProfiler();
+        final ProfilerFiller profiler = net.minecraft.util.profiling.Profiler.get();
         profiler.push("sub_level_section_occlusion_graph");
 
         final Iterable<ClientSubLevel> sublevels = ((ClientSubLevelContainer) ((SubLevelContainerHolder) this.level).sable$getPlotContainer()).getAllSubLevels();

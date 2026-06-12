@@ -17,7 +17,7 @@ public class SubLevelsBlockSkyMixin {
     private boolean sable$subLevelsBlockSky(final Level instance, final BlockPos pos, final Operation<Boolean> original) {
         final boolean canSeeOriginal = original.call(instance, pos);
 
-        if (canSeeOriginal && pos.getY() < instance.getMaxBuildHeight()) {
+        if (canSeeOriginal && pos.getY() < (instance.getMaxY() + 1)) {
             //I can't think of a better way to approach this right now... --cyvack
             if (SubLevelsBlockSkyMixinHelper.checkSkyWithSublevels(instance, pos)) {
                 return false;

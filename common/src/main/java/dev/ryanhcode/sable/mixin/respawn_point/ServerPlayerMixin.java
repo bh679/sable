@@ -105,14 +105,14 @@ public abstract class ServerPlayerMixin implements ServerPlayerRespawnExtension 
     @Inject(method = "addAdditionalSaveData", at = @At("TAIL"))
     private void sable$addRespawnPoint(final CompoundTag compoundTag, final CallbackInfo ci) {
         if (this.sable$respawnPoint != null) {
-            compoundTag.putUUID("RespawnPoint", this.sable$respawnPoint);
+            compoundTag.store("RespawnPoint", net.minecraft.core.UUIDUtil.CODEC, this.sable$respawnPoint);
         }
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("TAIL"))
     private void sable$readRespawnPoint(final CompoundTag compoundTag, final CallbackInfo ci) {
-        if (compoundTag.hasUUID("RespawnPoint")) {
-            this.sable$respawnPoint = compoundTag.getUUID("RespawnPoint");
+        if (compoundTag.contains("RespawnPoint")) {
+            this.sable$respawnPoint = compoundTag.read("RespawnPoint", net.minecraft.core.UUIDUtil.CODEC).orElseThrow();
         }
     }
 

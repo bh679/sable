@@ -8,7 +8,7 @@ import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -91,7 +91,7 @@ public class DimensionPhysicsData {
         public static final ReloadListener INSTANCE = new ReloadListener();
 
         public static final String NAME = "dimension_physics";
-        public static final ResourceLocation ID = Sable.sablePath(NAME);
+        public static final Identifier ID = Sable.sablePath(NAME);
 
         public ReloadListener() {
             super(ReloadListener.GSON, NAME);
@@ -110,10 +110,10 @@ public class DimensionPhysicsData {
         }
 
         @Override
-        protected void apply(final Map<ResourceLocation, JsonElement> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
+        protected void apply(final Map<Identifier, JsonElement> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
             DIMENSION_PHYSICS_DATA.clear();
 
-            for (final Map.Entry<ResourceLocation, JsonElement> entry : map.entrySet()) {
+            for (final Map.Entry<Identifier, JsonElement> entry : map.entrySet()) {
                 try {
                     final DataResult<DimensionPhysics> dataResult = DimensionPhysics.CODEC.parse(JsonOps.INSTANCE, entry.getValue());
 

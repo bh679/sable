@@ -53,7 +53,7 @@ public abstract class AbstractArrowMixin extends Entity {
         final Vec3 localPosition = subLevel.logicalPose().transformPositionInverse(this.position());
         final Vec3 diff = blockHitResult.getLocation().subtract(localPosition);
 
-        if (!this.level().isClientSide && !this.inGround) {
+        if (!this.level().isClientSide() && !this.inGround) {
             final Vec3 localImpulse = subLevel.logicalPose().transformNormalInverse(this.getDeltaMovement());
             RigidBodyHandle.of((ServerSubLevel) subLevel).applyImpulseAtPoint(localPosition, localImpulse);
         }

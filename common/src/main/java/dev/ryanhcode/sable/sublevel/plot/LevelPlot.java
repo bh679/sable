@@ -135,7 +135,7 @@ public abstract class LevelPlot {
         final ChunkPos centerChunk = this.getCenterChunk();
         final Level level = this.subLevel.getLevel();
         
-        return new BlockPos(centerChunk.getMinBlockX() + 8, (level.getMinBuildHeight() + level.getMaxBuildHeight()) / 2, centerChunk.getMinBlockZ() + 8);
+        return new BlockPos(centerChunk.getMinBlockX() + 8, (level.getMinY() + (level.getMaxY() + 1)) / 2, centerChunk.getMinBlockZ() + 8);
     }
 
     /**
@@ -303,7 +303,7 @@ public abstract class LevelPlot {
      * Updates & rebuilds the block bounding box of this plot.
      */
     public void updateBoundingBox() {
-        if (this.subLevel.getLevel().isClientSide) {
+        if (this.subLevel.getLevel().isClientSide()) {
             return;
         }
 

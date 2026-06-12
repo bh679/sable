@@ -24,9 +24,9 @@ public class SableNBTUtils {
 
     public static Pose3d readPose3d(final CompoundTag tag) {
         return new Pose3d(
-                readVector3d(tag.getCompound("position")),
-                readQuaternion(tag.getCompound("orientation")),
-                readVector3d(tag.getCompound("rotation_point")),
+                readVector3d(tag.getCompoundOrEmpty("position")),
+                readQuaternion(tag.getCompoundOrEmpty("orientation")),
+                readVector3d(tag.getCompoundOrEmpty("rotation_point")),
                 new Vector3d(1.0)
         );
     }

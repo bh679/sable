@@ -21,7 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -122,12 +122,12 @@ public final class AssemblyTest {
     public static void testAllBlocks(final GameTestHelper helper) {
         final boolean failOnFirstError = false;
         final boolean fastTest = true;
-        final Set<ResourceLocation> skip = Set.of(
-                ResourceLocation.fromNamespaceAndPath("copycats", "wrapped_copycat")
+        final Set<Identifier> skip = Set.of(
+                Identifier.fromNamespaceAndPath("copycats", "wrapped_copycat")
         );
-        final Set<ResourceLocation> illegalInventories = Set.of(
-                ResourceLocation.fromNamespaceAndPath("create_new_age", "reactor_fuel_acceptor"),
-                ResourceLocation.fromNamespaceAndPath("farmersdelight", "cooking_pot") // Unsure why this failed
+        final Set<Identifier> illegalInventories = Set.of(
+                Identifier.fromNamespaceAndPath("create_new_age", "reactor_fuel_acceptor"),
+                Identifier.fromNamespaceAndPath("farmersdelight", "cooking_pot") // Unsure why this failed
         );
 
         final ServerLevel level = helper.getLevel();
@@ -150,7 +150,7 @@ public final class AssemblyTest {
         long tick = 0;
         long tests = 0;
         for (final Map.Entry<ResourceKey<Block>, Block> entry : BuiltInRegistries.BLOCK.entrySet()) {
-            final ResourceLocation blockId = entry.getKey().location();
+            final Identifier blockId = entry.getKey().location();
             if (skip.contains(blockId)) {
                 continue;
             }

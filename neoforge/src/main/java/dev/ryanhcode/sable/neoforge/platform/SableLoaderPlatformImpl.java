@@ -8,4 +8,9 @@ public class SableLoaderPlatformImpl implements SableLoaderPlatform {
 	public String getModVersion(final String modId) {
 		return LoadingModList.get().getModFileById(modId).versionString();
 	}
+
+	@Override
+	public boolean isModLoaded(final String modId) {
+		return LoadingModList.get().getModFileById(modId) != null;
+	}
 }

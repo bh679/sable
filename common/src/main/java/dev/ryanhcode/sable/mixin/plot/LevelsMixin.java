@@ -41,7 +41,7 @@ public abstract class LevelsMixin extends Level implements SubLevelContainerHold
         if (SablePlatform.INSTANCE.isWrappedLevel(this)) return null;
         final SubLevelContainer container;
 
-        if (!this.isClientSide) {
+        if (!this.isClientSide()) {
             container = new ServerSubLevelContainer(this, SubLevelContainer.DEFAULT_LOG_SIZE_LENGTH, SubLevelContainer.DEFAULT_LOG_PLOT_SIZE, SubLevelContainer.DEFAULT_ORIGIN, SubLevelContainer.DEFAULT_ORIGIN);
         } else {
             container = new ClientSubLevelContainer(this, SubLevelContainer.DEFAULT_LOG_SIZE_LENGTH, SubLevelContainer.DEFAULT_LOG_PLOT_SIZE, SubLevelContainer.DEFAULT_ORIGIN, SubLevelContainer.DEFAULT_ORIGIN);

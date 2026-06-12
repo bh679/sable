@@ -4,7 +4,7 @@ import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -31,7 +31,7 @@ public record ClientboundStopTrackingSubLevelPacket(long plotCoordinate) impleme
     }
 
     @Override
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         final Level level = context.level();
         final SubLevelContainer container = SubLevelContainer.getContainer(level);
 

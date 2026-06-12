@@ -21,14 +21,14 @@ public class SablePlotPlatformImpl implements SablePlotPlatform {
     @Override
     public void readLightData(final CompoundTag tag, final RegistryAccess registryAccess, final LevelChunk chunk) {
         if (tag.contains(LevelChunkAuxiliaryLightManager.LIGHT_NBT_KEY, Tag.TAG_LIST)) {
-            chunk.getAuxLightManager(chunk.getPos()).deserializeNBT(registryAccess, tag.getList(LevelChunkAuxiliaryLightManager.LIGHT_NBT_KEY, Tag.TAG_COMPOUND));
+            chunk.getAuxLightManager(chunk.getPos()).deserializeNBT(registryAccess, tag.getListOrEmpty(LevelChunkAuxiliaryLightManager.LIGHT_NBT_KEY));
         }
     }
 
     @Override
     public void readChunkAttachments(final CompoundTag tag, final RegistryAccess registryAccess, final LevelChunk chunk) {
         if (tag.contains(AttachmentHolder.ATTACHMENTS_NBT_KEY, Tag.TAG_COMPOUND)) {
-            chunk.readAttachmentsFromNBT(registryAccess, tag.getCompound(AttachmentHolder.ATTACHMENTS_NBT_KEY));
+            chunk.readAttachmentsFromNBT(registryAccess, tag.getCompoundOrEmpty(AttachmentHolder.ATTACHMENTS_NBT_KEY));
         }
     }
 

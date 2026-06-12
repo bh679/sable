@@ -24,7 +24,7 @@ public class ClientWaterOcclusionContainer extends WaterOcclusionContainer<Clien
     public void removeRegion(final WaterOcclusionRegion region) {
         this.regions.remove(region);
 
-        SableClient.WATER_OCCLUSION_RENDERER.removeRegion(((ClientWaterOcclusionRegion) region).renderRegion);
+        // water-occlusion renderer stripped on mc26.1 port branch (Veil)
     }
 
     @Override
@@ -38,7 +38,7 @@ public class ClientWaterOcclusionContainer extends WaterOcclusionContainer<Clien
                 .map(BlockPos::immutable).filter(x -> volume.getOccupied(x.getX(), x.getY(), x.getZ()))
                 .toList();
 
-        region.renderRegion = SableClient.WATER_OCCLUSION_RENDERER.addRegion(blocks);
+        // water-occlusion renderer stripped on mc26.1 port branch (Veil)
 
         return region;
     }

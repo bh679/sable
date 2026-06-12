@@ -147,7 +147,7 @@ public abstract class EntityMixin {
                 final SubLevelTrackingPointSavedData data = SubLevelTrackingPointSavedData.getOrLoad((ServerLevel) this.level());
                 final UUID loginPointUUID = data.generateTrackingPoint(serverPlayer, (ServerSubLevel) subLevel);
                 if (loginPointUUID != null) {
-                    instance.putUUID("LoginPoint", loginPointUUID);
+                    instance.store("LoginPoint", net.minecraft.core.UUIDUtil.CODEC, loginPointUUID);
                 }
             }
 

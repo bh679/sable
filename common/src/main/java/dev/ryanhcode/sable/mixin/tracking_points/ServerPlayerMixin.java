@@ -22,7 +22,7 @@ public abstract class ServerPlayerMixin {
         final SubLevelTrackingPointSavedData data = SubLevelTrackingPointSavedData.getOrLoad(this.serverLevel());
         final UUID loginPointUUID = data.generateTrackingPoint((ServerPlayer) (Object) this);
         if (loginPointUUID != null) {
-            compoundTag.putUUID("LoginPoint", loginPointUUID);
+            compoundTag.store("LoginPoint", net.minecraft.core.UUIDUtil.CODEC, loginPointUUID);
         }
     }
 

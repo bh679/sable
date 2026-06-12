@@ -1,9 +1,8 @@
 package dev.ryanhcode.sable.network.packets.tcp;
 
 import dev.ryanhcode.sable.Sable;
-import dev.ryanhcode.sable.SableClient;
 import dev.ryanhcode.sable.network.tcp.SableTCPPacket;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -28,7 +27,9 @@ public record ClientboundEnterGizmoPacket() implements SableTCPPacket {
     }
 
     @Override
-    public void handle(final PacketContext context) {
-        SableClient.GIZMO_HANDLER.start();
+    public void handle(final SablePacketContext context) {
+        // mc26.1 port branch: the ImGui gizmo editor was stripped with Veil;
+        // the packet is kept for protocol parity but does nothing client-side.
+        Sable.LOGGER.warn("Gizmo mode is not available in this build (ImGui debug tools stripped on the mc26.1 port)");
     }
 }

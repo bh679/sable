@@ -10,7 +10,7 @@ import dev.ryanhcode.sable.network.udp.SableUDPPacketType;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.util.SableBufferUtils;
-import foundry.veil.api.network.handler.PacketContext;
+import dev.ryanhcode.sable.network.tcp.SablePacketContext;
 import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.FriendlyByteBuf;
@@ -38,7 +38,7 @@ public final class ClientboundSableSnapshotDualPacket implements SableUDPPacket,
 
 
     @Override
-    public void handle(final PacketContext context) {
+    public void handle(final SablePacketContext context) {
         this.handleClient(context.level(), PacketReceiveMode.TCP);
     }
 

@@ -3,10 +3,8 @@ package dev.ryanhcode.sable.sublevel.render;
 import dev.ryanhcode.sable.api.sublevel.ClientSubLevelContainer;
 import dev.ryanhcode.sable.mixinterface.plot.SubLevelContainerHolder;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
-import dev.ryanhcode.sable.sublevel.render.dispatcher.ReachAroundSubLevelRenderDispatcher;
 import dev.ryanhcode.sable.sublevel.render.dispatcher.SubLevelRenderDispatcher;
 import dev.ryanhcode.sable.sublevel.render.dispatcher.VanillaSubLevelRenderDispatcher;
-import foundry.veil.api.compat.SodiumCompat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 
@@ -75,26 +73,17 @@ public final class SubLevelRenderer {
     }
 
     public enum SelectedRenderer {
+        // mc26.1 port branch: SODIUM_REACHAROUND removed with the Sodium compat
+        // strip (no Sodium 26.1-compat layer yet); vanilla is the only path.
         VANILLA {
             @Override
             public boolean isSupported() {
-                return !SodiumCompat.isLoaded();
+                return true;
             }
 
             @Override
             public SubLevelRenderDispatcher create() {
                 return new VanillaSubLevelRenderDispatcher();
-            }
-        },
-        SODIUM_REACHAROUND {
-            @Override
-            public boolean isSupported() {
-                return SodiumCompat.isLoaded();
-            }
-
-            @Override
-            public SubLevelRenderDispatcher create() {
-                return new ReachAroundSubLevelRenderDispatcher();
             }
         };
 

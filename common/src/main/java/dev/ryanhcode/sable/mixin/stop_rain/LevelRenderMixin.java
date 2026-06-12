@@ -33,7 +33,7 @@ public class LevelRenderMixin {
         final Vector3d checkingPos = new Vector3d();
         final Vector3d localUp = new Vector3d(0, 1, 0);
 
-        final BoundingBox3dc minMaxBB = new BoundingBox3d(pX, level.getMinBuildHeight(), pZ, pX + 1, level.getMaxBuildHeight(), pZ + 1);
+        final BoundingBox3dc minMaxBB = new BoundingBox3d(pX, level.getMinY(), pZ, pX + 1, (level.getMaxY() + 1), pZ + 1);
         int maxHeight = Integer.MIN_VALUE;
         for (final SubLevel subLevel : Sable.HELPER.getAllIntersecting(level, minMaxBB)) {
             subLevel.logicalPose().transformPositionInverse(checkingPos.set(pX + 0.5f, subLevel.boundingBox().maxY(), pZ + 0.5f));

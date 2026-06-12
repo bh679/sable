@@ -1,7 +1,7 @@
 package dev.ryanhcode.sable.render.dynamic_biome;
 
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 
 public class DynamicBiomeTintRenderTypes extends RenderType {
     private static final String NAME = "dynamic_biome_tint";

@@ -21,7 +21,7 @@ import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PrioritizeChunkUpdates;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.chunk.RenderRegionCache;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
@@ -205,7 +205,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
             return;
         }
 
-        final ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
+        final ProfilerFiller profiler = net.minecraft.util.profiling.Profiler.get();
         final Vector3d cameraPos = JOMLConversion.atCenterOf(camera.getBlockPosition()).sub(8, 8, 8);
         this.subLevel.logicalPose().transformPositionInverse(cameraPos);
 
