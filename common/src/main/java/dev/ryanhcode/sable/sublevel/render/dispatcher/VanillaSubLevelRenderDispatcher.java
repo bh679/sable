@@ -36,17 +36,15 @@ public class VanillaSubLevelRenderDispatcher implements SubLevelRenderDispatcher
     }
 
     /**
-     * Checks if this sub-level is a single block, and therefore can use simpler batched rendering
+     * Checks if this sub-level is a single block, and therefore can use simpler batched rendering.
+     *
+     * <p>PORT-TODO(mc26.1): the single-block fast path (VanillaSingleSubLevelRenderData) drew
+     * through a Tesselator pass driven by ShaderInstance uniforms, which no longer exist.
+     * Until it is rebuilt on the new draw pipeline, single-block sub-levels render through the
+     * chunked path — correct, just not batched — so this always reports false.
      */
     public static boolean isSingleBlock(final ClientSubLevel subLevel) {
-        final BoundingBox3ic bounds = subLevel.getPlot().getBoundingBox();
-        final boolean isSingle = bounds != null && bounds.minX() == bounds.maxX() && bounds.minY() == bounds.maxY() && bounds.minZ() == bounds.maxZ();
-        if (!isSingle) {
-            return false;
-        }
-
-        final BlockState blockState = subLevel.getLevel().getBlockState(new BlockPos(bounds.minX(), bounds.minY(), bounds.minZ()));
-        return !blockState.is(SableTags.ALWAYS_CHUNK_RENDERING);
+        return false;
     }
 
     @Override
@@ -76,10 +74,6 @@ public class VanillaSubLevelRenderDispatcher implements SubLevelRenderDispatcher
 
     @Override
     public SubLevelRenderData createRenderData(final ClientSubLevel subLevel) {
-        // TODO(port-debug): remove [RENDER-DBG] logging once plot invisibility is fixed
-        dev.ryanhcode.sable.Sable.LOGGER.info("[RENDER-DBG] createRenderData plot={} singleBlock={} bounds={}",
-                subLevel.getPlot().plotPos, isSingleBlock(subLevel), subLevel.getPlot().getBoundingBox());
-
         if (isSingleBlock(subLevel)) {
             return new VanillaSingleSubLevelRenderData(subLevel);
         }

@@ -122,14 +122,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
 
     }
 
-    // TODO(port-debug): remove [RENDER-DBG] counters once plot invisibility is fixed
-    private static int sable$dbgAppendCallCounter;
-
     public void resize() {
-        // TODO(port-debug): remove [RENDER-DBG] logging once plot invisibility is fixed
-        dev.ryanhcode.sable.Sable.LOGGER.info("[RENDER-DBG] resize plot={} bounds={}",
-                this.subLevel.getPlot().plotPos, this.subLevel.getPlot().getBoundingBox());
-
         final SectionRenderDispatcher.RenderSection[] oldRenderSections = this.renderSections;
         final Collection<SectionRenderDispatcher.RenderSection> oldRenderSectionsList = new ObjectArrayList<>(this.allRenderSections);
 
@@ -202,10 +195,6 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
         if (this.dirtyRenderSections.isEmpty()) {
             return;
         }
-
-        // TODO(port-debug): remove [RENDER-DBG] logging once plot invisibility is fixed
-        dev.ryanhcode.sable.Sable.LOGGER.info("[RENDER-DBG] compileSections scheduling {} dirty sections (total {})",
-                this.dirtyRenderSections.size(), this.allRenderSections.size());
 
         final ProfilerFiller profiler = net.minecraft.util.profiling.Profiler.get();
         final Vector3d cameraPos = JOMLConversion.atCenterOf(camera.blockPosition()).sub(8, 8, 8);
@@ -330,34 +319,17 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
         final long now = net.minecraft.util.Util.getMillis();
         int uboIndex = -1;
 
-        // TODO(port-debug): remove [RENDER-DBG] census once plot invisibility is fixed
-        final boolean dbgLogThisCall = (sable$dbgAppendCallCounter++ % 120) == 0;
-        int dbgCompiledMeshes = 0;
-        int dbgNullDraws = 0;
-        int dbgNullSlices = 0;
-        int dbgDrawsAppended = 0;
-
         for (final SectionRenderDispatcher.RenderSection renderSection : this.allRenderSections) {
             final SectionMesh sectionMesh = renderSection.getSectionMesh();
             final BlockPos sectionOrigin = renderSection.getRenderOrigin();
             int sectionUboIndex = -1;
 
-            if (sectionMesh != CompiledSectionMesh.UNCOMPILED) {
-                dbgCompiledMeshes++;
-            }
-
             for (final ChunkSectionLayer layer : ChunkSectionLayer.values()) {
                 final SectionMesh.SectionDraw draw = sectionMesh.getSectionDraw(layer);
                 final SectionRenderDispatcher.RenderSectionBufferSlice slice = this.sectionRenderDispatcher.getRenderSectionSlice(sectionMesh, layer);
                 if (slice == null || draw == null || (draw.hasCustomIndexBuffer() && slice.indexBuffer() == null)) {
-                    if (draw == null) {
-                        dbgNullDraws++;
-                    } else if (slice == null) {
-                        dbgNullSlices++;
-                    }
                     continue;
                 }
-                dbgDrawsAppended++;
 
                 if (sectionUboIndex == -1) {
                     sectionUboIndex = uboIndexOffset + sectionInfos.size();
@@ -409,16 +381,6 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
                         (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[finalUboIndex])
                 ));
             }
-        }
-
-        // TODO(port-debug): remove [RENDER-DBG] census once plot invisibility is fixed
-        if (dbgLogThisCall) {
-            dev.ryanhcode.sable.Sable.LOGGER.info(
-                    "[RENDER-DBG] appendChunkDraws plot={} sections={} compiledMeshes={} drawsAppended={} nullDraws={} nullSlices={} origin=({},{},{}) renderPos=({},{},{})",
-                    this.subLevel.getPlot().plotPos, this.allRenderSections.size(), dbgCompiledMeshes, dbgDrawsAppended,
-                    dbgNullDraws, dbgNullSlices,
-                    this.origin.x(), this.origin.y(), this.origin.z(),
-                    String.format("%.2f", renderPos.x()), String.format("%.2f", renderPos.y()), String.format("%.2f", renderPos.z()));
         }
     }
 

@@ -1,8 +1,6 @@
 package dev.ryanhcode.sable.sublevel.system;
 
-import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.SableConfig;
-import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelObserver;
 import dev.ryanhcode.sable.api.sublevel.SubLevelTrackingPlugin;
@@ -362,10 +360,6 @@ public class SubLevelTrackingSystem implements SubLevelObserver {
                         final Vector3f linearVelocity = new Vector3f((float) serverSubLevel.latestLinearVelocity.x, (float) serverSubLevel.latestLinearVelocity.y, (float) serverSubLevel.latestLinearVelocity.z);
                         final Vector3f angularVelocity = new Vector3f((float) serverSubLevel.latestAngularVelocity.x, (float) serverSubLevel.latestAngularVelocity.y, (float) serverSubLevel.latestAngularVelocity.z);
                         entries.add(new ClientboundSableSnapshotDualPacket.Entry(l, serverSubLevel.logicalPose(), linearVelocity, angularVelocity));
-                        // TODO(port-debug): remove [POSE-DBG] logging once client pose corruption is fixed
-                        Sable.LOGGER.info("[POSE-DBG] SERVER-SEND tick={} plot={} pose={} linVel=({},{},{})",
-                                this.interpolationTick, l, sable$dbgPose(serverSubLevel.logicalPose()),
-                                linearVelocity.x, linearVelocity.y, linearVelocity.z);
                     }
                 }
             }
@@ -420,15 +414,6 @@ public class SubLevelTrackingSystem implements SubLevelObserver {
             return;
         }
         this.plugins.add(plugin);
-    }
-
-    // TODO(port-debug): remove [POSE-DBG] helper once client pose corruption is fixed
-    public static String sable$dbgPose(final Pose3dc p) {
-        return String.format("pos=(%.4f,%.4f,%.4f) rotPt=(%.4f,%.4f,%.4f) scale=(%.4f,%.4f,%.4f) quat=(%.4f,%.4f,%.4f,%.4f)",
-                p.position().x(), p.position().y(), p.position().z(),
-                p.rotationPoint().x(), p.rotationPoint().y(), p.rotationPoint().z(),
-                p.scale().x(), p.scale().y(), p.scale().z(),
-                p.orientation().x(), p.orientation().y(), p.orientation().z(), p.orientation().w());
     }
 
     private record SubLevelUpdateTicket(SubLevel subLevels, UpdateTicketType type) {

@@ -33,45 +33,58 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 - [x] NeoForge module compiles; `sable-neoforge-26.1.2-1.3.0-dt.1.jar` assembles (game tests excluded pending 26.1 test-framework port)
 - [x] **runClient boots to title screen and into a world** (39 boot iterations of mixin-application fixes; player joins, server ticks, Rapier natives load)
 - [x] **Plot assembly works server-side** — `/sable assemble area` created a 729-block sub-level, `assemble connected` a 5-block one; Rapier scenes initialized; sub-level saving runs; no crash
-- [ ] **ACTIVE BUG: plots are invisible client-side and can't be targeted** ← current
+- [x] **Plots render, can be targeted, stood on, and broken client-side** (verified in-game 2026-06-12; spawned single-block plots — `assemble area` visual check still pending but uses the identical chunked draw path)
+- [ ] **Sub-level persistence: plot saved in one session does not load/track in the next** ← current
 
-## Active investigation: client pose corruption (plots invisible)
+## Resolved: "client pose corruption" (plots invisible + untargetable, 2026-06-12)
 
-**Symptoms** (in-game test 2026-06-12): assembled/spawned plots don't render, blocks
-can't be placed on them, and the log spams `Aborting entity get for abnormally large
-AABB` (Render thread, via `LocalPlayer.pick` → `SubLevelInclusiveLevelEntityGetter`).
-The AABB always has one sane corner at the real plot location (~x 2-7, y 56-60) and one
-corner at ±millions, with different magnitudes every frame. One root cause explains all
-three symptoms: the client-side **render pose** is garbage, so the plot is drawn (and
-raycast against) millions of blocks away.
+The pose pipeline was never broken — `[POSE-DBG]` instrumentation at all four stages
+(server `logicalPose` at send → client receive → interpolator output → `renderPose`)
+showed sane values end-to-end. Two independent port regressions explained all symptoms:
 
-**Hypotheses, ranked:**
-1. **Snapshot interpolation/extrapolation math** in `SubLevelSnapshotInterpolator` /
-   `ClientSubLevel.renderPose(pt)` — per-frame-varying overshoot with a sane anchor fits
-   a broken time source (port converted `getTimer()`→`getDeltaTracker()` and reworked
-   profiler/time APIs; check the units used to timestamp vs sample snapshots — game
-   time vs millis vs partial ticks).
-2. **UDP/local-channel snapshot serialization** — agent rework renamed
-   `NoOpFrameEncoder/Decoder`→`LocalFrameEncoder/Decoder`+`MonitoredLocalFrameDecoder`
-   and rebuilt `EventLoopGroupHolder` usage. Misaligned frame reads would produce
-   exactly this random garbage. NOTE: setting `attempt_udp_networking = false` in
-   sable-client.toml did NOT stop "Client UDP channel active" in single player — find
-   where `ATTEMPT_UDP_NETWORKING` is consumed and whether the local channel bypasses
-   it; a hard early-return in the UDP activation path is the clean A/B test.
-3. TCP `ClientboundSableSnapshotDualPacket` codec drift (least likely — but log its
-   received poses to rule out).
+1. **Pick distance checks silently no-opped** (`clip_overwrite.GameRendererMixin`):
+   upstream redirects `Vec3.distanceToSqr`/`closerThan` in `GameRenderer#pick`/
+   `#filterHitResult` to be sub-level aware, because Sable's clip returns hit locations
+   in **plot space** (~2.05e7 blocks out; the "abnormally large AABB" min corners
+   decomposed exactly as `unitViewVector × 2.9e7` = distance to the plot-space hit).
+   26.1 moved that logic to `LocalPlayer#raycastHitResult`/`#pick`/`#filterHitResult`;
+   the port's retarget at `Minecraft#pick(F)V` with `require = 0` matched nothing, so
+   `filterHitResult` discarded every plot hit as an out-of-range MISS (→ untargetable)
+   and `pick` sized the entity-search AABB at 2.9e7 (→ log spam). Fixed by
+   `clip_overwrite.LocalPlayerMixin` (registered required, fails loudly on retarget).
 
-**Debug plan:** add temporary LOGGER lines for (a) server `logicalPose` per tick for
-one sub-level, (b) client received snapshot poses in the dual-packet/UDP handlers,
-(c) interpolator output in `renderPose`. Compare where sanity is lost: received-garbage
-→ hypothesis 2 (diff `network/udp/` against upstream `48f5c24`); received-sane but
-output-garbage → hypothesis 1 (time math). Also verify the TCP fallback actually
-delivers snapshots when UDP is killed.
+2. **Single-block plots used the dormant fast-path renderer**: `/sable spawn block`
+   plots route through `VanillaSingleSubLevelRenderData`, a Tesselator/ShaderInstance
+   path that is PORT-TODO on this branch — skipped in `appendChunkDraws`, i.e.
+   invisible by omission. `VanillaSubLevelRenderDispatcher.isSingleBlock` now returns
+   false so single-block sub-levels render through the chunked path (correct, just not
+   batched); rebuild the fast path on the new draw pipeline later for floating-block-
+   heavy scenes.
 
-**Also pending:** `minecraft:chain`→`minecraft:iron_chain` in
-`tags/block/{quarter_volume,super_light}.json` and deleting
-`physics_block_properties/flywheel.json` (Create leftover) — fix was prepared but not
-yet applied/confirmed.
+The chunked draw path itself (`compileSections` → vanilla `SectionRenderDispatcher`
+uber-buffers → draws appended in `prepareChunkRenders`'s `ChunkSectionsToRender`)
+verified healthy: census showed meshes compiled, GPU slices found, draws appended at
+sane `renderPos` every frame, zero GL errors.
+
+**UDP findings worth keeping** (hypothesis 2 was dead on arrival for SP): in single
+player, `SableUDPServer.sendUDPPacket` sees the player's `LocalAddress` and calls
+`sendUDPPacketLocal` — a same-thread serialize→deserialize round trip handed straight
+to the client network event loop. **The netty local UDP channel is never used for SP
+snapshots** ("Client UDP channel active" is unconditional from `ConnectionMixin`).
+`sable-client.toml attempt_udp_networking` only gates the client's response to the
+auth handshake (remote servers); the SP gate is the **server** config flag in
+`sable-common.toml`. Real netty UDP framing (`LocalFrameEncoder`/`HiddenByteBuf`
+rename, KQueue datagram branch) remains untested until a dedicated-server test.
+
+## Next: sub-level persistence
+
+A plot spawned at 20:38 (2026-06-12) saved ("Saving sub-levels" ran on quit) but did
+not load/track on rejoin at 21:15 — no client tracking start at join; the world was
+plot-free. Either the sub-level save dropped content or the load path fails silently.
+Related: PORTING.md open item on the PlotChunkHolder shutdown leak (upstream #679),
+and the load path replays `handleBlockChange` per block (`ServerLevelPlot` deserialize)
+— verify with: assemble → quit → rejoin, watching `Saving sub-levels for level` and
+whether a `ClientboundStartTrackingSubLevelPacket` arrives on join.
 
 ## Runtime-dormant injectors (require = 0) — polish-pass backlog
 
@@ -84,8 +97,10 @@ ValueInput/ValueOutput save hooks, sea-level-during-ctor guard, config-loading
 null-guard, moved-package target strings (`projectile/arrow/`), `tickInGameSound`,
 swimming camera near-plane/level shadows.
 
-Dormant (feature degrades to vanilla; re-port deliberately): single-block plot draw,
-sub-level block entities (chests on plots invisible!), entity render-pose smoothing +
+Dormant (feature degrades to vanilla; re-port deliberately): single-block plot draw
+fast path (single-block plots now render via the chunked path — only the batched
+Tesselator fast path is missing), sub-level block entities (chests on plots invisible!),
+entity render-pose smoothing +
 rotation sync (`entity_rotations_and_riding` Entity/ServerEntity — silent-apply
 mystery, bisect-confirmed), block-destroy decals, debug boxes/gizmo, name tags,
 crosshair attack indicator, leashes, sleeping pose, weather-on-plots, sculk lambdas,
