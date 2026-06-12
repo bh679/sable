@@ -32,7 +32,46 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 - [x] **Common module compiles** (1212 → 0 over 9 passes; render cluster rebuilt on prepareChunkRenders/SectionMesh, plot core + long tail ported)
 - [x] NeoForge module compiles; `sable-neoforge-26.1.2-1.3.0-dt.1.jar` assembles (game tests excluded pending 26.1 test-framework port)
 - [x] **runClient boots to title screen and into a world** (39 boot iterations of mixin-application fixes; player joins, server ticks, Rapier natives load)
-- [ ] **Plot assembles and moves in-world** ← current (`/sable assemble cube`-family commands; then DT's use-cases)
+- [x] **Plot assembly works server-side** — `/sable assemble area` created a 729-block sub-level, `assemble connected` a 5-block one; Rapier scenes initialized; sub-level saving runs; no crash
+- [ ] **ACTIVE BUG: plots are invisible client-side and can't be targeted** ← current
+
+## Active investigation: client pose corruption (plots invisible)
+
+**Symptoms** (in-game test 2026-06-12): assembled/spawned plots don't render, blocks
+can't be placed on them, and the log spams `Aborting entity get for abnormally large
+AABB` (Render thread, via `LocalPlayer.pick` → `SubLevelInclusiveLevelEntityGetter`).
+The AABB always has one sane corner at the real plot location (~x 2-7, y 56-60) and one
+corner at ±millions, with different magnitudes every frame. One root cause explains all
+three symptoms: the client-side **render pose** is garbage, so the plot is drawn (and
+raycast against) millions of blocks away.
+
+**Hypotheses, ranked:**
+1. **Snapshot interpolation/extrapolation math** in `SubLevelSnapshotInterpolator` /
+   `ClientSubLevel.renderPose(pt)` — per-frame-varying overshoot with a sane anchor fits
+   a broken time source (port converted `getTimer()`→`getDeltaTracker()` and reworked
+   profiler/time APIs; check the units used to timestamp vs sample snapshots — game
+   time vs millis vs partial ticks).
+2. **UDP/local-channel snapshot serialization** — agent rework renamed
+   `NoOpFrameEncoder/Decoder`→`LocalFrameEncoder/Decoder`+`MonitoredLocalFrameDecoder`
+   and rebuilt `EventLoopGroupHolder` usage. Misaligned frame reads would produce
+   exactly this random garbage. NOTE: setting `attempt_udp_networking = false` in
+   sable-client.toml did NOT stop "Client UDP channel active" in single player — find
+   where `ATTEMPT_UDP_NETWORKING` is consumed and whether the local channel bypasses
+   it; a hard early-return in the UDP activation path is the clean A/B test.
+3. TCP `ClientboundSableSnapshotDualPacket` codec drift (least likely — but log its
+   received poses to rule out).
+
+**Debug plan:** add temporary LOGGER lines for (a) server `logicalPose` per tick for
+one sub-level, (b) client received snapshot poses in the dual-packet/UDP handlers,
+(c) interpolator output in `renderPose`. Compare where sanity is lost: received-garbage
+→ hypothesis 2 (diff `network/udp/` against upstream `48f5c24`); received-sane but
+output-garbage → hypothesis 1 (time math). Also verify the TCP fallback actually
+delivers snapshots when UDP is killed.
+
+**Also pending:** `minecraft:chain`→`minecraft:iron_chain` in
+`tags/block/{quarter_volume,super_light}.json` and deleting
+`physics_block_properties/flywheel.json` (Create leftover) — fix was prepared but not
+yet applied/confirmed.
 
 ## Runtime-dormant injectors (require = 0) — polish-pass backlog
 
