@@ -12,6 +12,8 @@ on:
   pull_request:
     branches:
       - 'main'
+      - 'port/mc26.1'
+  workflow_dispatch:
 
 jobs:
   build:
