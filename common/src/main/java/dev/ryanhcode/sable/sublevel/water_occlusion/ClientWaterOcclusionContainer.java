@@ -1,7 +1,5 @@
 package dev.ryanhcode.sable.sublevel.water_occlusion;
 
-import dev.ryanhcode.sable.SableClient;
-import dev.ryanhcode.sable.render.region.SimpleCulledRenderRegion;
 import dev.ryanhcode.sable.util.BoundedBitVolume3i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -44,7 +42,7 @@ public class ClientWaterOcclusionContainer extends WaterOcclusionContainer<Clien
     }
 
     protected static class ClientWaterOcclusionRegion extends WaterOcclusionRegion {
-        private SimpleCulledRenderRegion renderRegion;
+        // mc26.1 port: render region removed with the Veil water-occlusion renderer.
 
         public ClientWaterOcclusionRegion(final BoundedBitVolume3i bitSet) {
             super(bitSet);

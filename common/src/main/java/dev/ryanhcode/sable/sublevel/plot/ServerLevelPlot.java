@@ -42,7 +42,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.*;
-import net.minecraft.world.level.chunk.storage.ChunkSerializer;
+import net.minecraft.world.level.chunk.storage.SerializableChunkData;
 import net.minecraft.world.level.entity.EntitySection;
 import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -50,6 +50,7 @@ import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.ticks.LevelChunkTicks;
+import net.minecraft.world.ticks.SavedTick;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -59,9 +60,14 @@ import java.util.stream.Stream;
  */
 public class ServerLevelPlot extends LevelPlot {
     protected static final int DATA_VERSION = 1;
+    // PORT-NOTE(mc26.1): PalettedContainer codecs take a Strategy (top-level class) instead of an IdMap +
+    // nested Strategy constant; tick lists serialize through SavedTick codecs (LevelChunkTicks.save/load are gone).
+    private static final Strategy<BlockState> BLOCK_STATE_STRATEGY = Strategy.createForBlockStates(Block.BLOCK_STATE_REGISTRY);
     private static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(
-            Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState()
+            BlockState.CODEC, BLOCK_STATE_STRATEGY, Blocks.AIR.defaultBlockState()
     );
+    private static final Codec<List<SavedTick<Block>>> BLOCK_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.BLOCK.byNameCodec()).listOf();
+    private static final Codec<List<SavedTick<Fluid>>> FLUID_TICKS_CODEC = SavedTick.codec(BuiltInRegistries.FLUID.byNameCodec()).listOf();
 
     /**
      * The light engine for this plot
@@ -150,7 +156,7 @@ public class ServerLevelPlot extends LevelPlot {
         final ServerLevel serverLevel = this.getSubLevel().getLevel();
 
         if (serverLevel.getChunkSource() instanceof final ServerChunkCache cache) {
-            cache.chunkMap.updatingChunkMap.remove(pos.toLong());
+            cache.chunkMap.updatingChunkMap.remove(pos.pack());
             cache.chunkMap.modified = true;
         }
 
@@ -226,7 +232,7 @@ public class ServerLevelPlot extends LevelPlot {
 
         // Update the chunk map if one exists
         final ServerChunkCache cache = level.getChunkSource();
-        cache.chunkMap.updatingChunkMap.put(globalChunkPos.toLong(), holder);
+        cache.chunkMap.updatingChunkMap.put(globalChunkPos.pack(), holder);
         cache.chunkMap.modified = true;
 
         super.addChunkHolder(localChunkPos, holder, initializeLighting);
@@ -267,13 +273,13 @@ public class ServerLevelPlot extends LevelPlot {
         final ServerSubLevel subLevel = this.getSubLevel();
         final PersistentEntitySectionManager<Entity> manager = subLevel.getLevel().entityManager;
         for (final PlotChunkHolder chunk : this.getLoadedChunks()) {
-            final Stream<EntitySection<Entity>> sections = manager.sectionStorage.getExistingSectionsInChunk(chunk.getPos().toLong());
+            final Stream<EntitySection<Entity>> sections = manager.sectionStorage.getExistingSectionsInChunk(chunk.getPos().pack());
 
             for (final EntitySection<Entity> section : sections.toList()) {
                 final List<Entity> entities = section.getEntities().toList();
 
                 for (final Entity entity : entities) {
-                    if (entity.getType().is(SableTags.DESTROY_WITH_SUB_LEVEL)) {
+                    if (entity.typeHolder().is(SableTags.DESTROY_WITH_SUB_LEVEL)) {
                         entity.remove(Entity.RemovalReason.KILLED);
                     } else {
                         EntitySubLevelUtil.kickEntity(subLevel, entity);
@@ -322,7 +328,8 @@ public class ServerLevelPlot extends LevelPlot {
         final LevelChunkSection[] sections = new LevelChunkSection[sectionCount];
 
         for (int i = 0; i < sectionCount; ++i) {
-            sections[i] = new LevelChunkSection(level.registryAccess().lookupOrThrow(Registries.BIOME));
+            // PORT-NOTE(mc26.1): empty sections are created from the level's PalettedContainerFactory now.
+            sections[i] = new LevelChunkSection(level.palettedContainerFactory());
         }
 
         final LevelChunk chunk = new LevelChunk(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, sections, null, null);
@@ -337,7 +344,7 @@ public class ServerLevelPlot extends LevelPlot {
         tag.putInt("plot_x", this.plotPos.x() - this.container.getOrigin().x());
         tag.putInt("plot_z", this.plotPos.z() - this.container.getOrigin().y);
         tag.putInt("log_size", this.logSize);
-        tag.putString("biome", this.biome.location().toString());
+        tag.putString("biome", this.biome.identifier().toString());
         tag.putInt("data_version", DATA_VERSION);
 
         final ServerLevel level = this.getSubLevel().getLevel();
@@ -391,10 +398,11 @@ public class ServerLevelPlot extends LevelPlot {
 
             chunkTag.put("block_entities", blockEntitiesTag);
 
-            final ChunkAccess.TicksToSave ticksToSave = chunk.getTicksForSerialization();
-            final long gameTime = level.getGameTime();
-            chunkTag.put("block_ticks", ticksToSave.blocks().save(gameTime, block -> BuiltInRegistries.BLOCK.getKey(block).toString()));
-            chunkTag.put("fluid_ticks", ticksToSave.fluids().save(gameTime, fluid -> BuiltInRegistries.FLUID.getKey(fluid).toString()));
+            // PORT-NOTE(mc26.1): getTicksForSerialization(long) returns PackedTicks (lists of SavedTick);
+            // serialized via the SavedTick codecs like vanilla SerializableChunkData.
+            final ChunkAccess.PackedTicks ticksToSave = chunk.getTicksForSerialization(level.getGameTime());
+            chunkTag.store("block_ticks", BLOCK_TICKS_CODEC, ticksToSave.blocks());
+            chunkTag.store("fluid_ticks", FLUID_TICKS_CODEC, ticksToSave.fluids());
 
             final CompoundTag heightMapsTag = new CompoundTag();
 
@@ -420,12 +428,12 @@ public class ServerLevelPlot extends LevelPlot {
      * Deserializes a plot from an NBT tag
      */
     public void load(final CompoundTag tag) {
-        final int logSize = tag.getInt("log_size");
+        final int logSize = tag.getIntOr("log_size", 0);
         if (logSize != this.logSize) {
             throw new IllegalArgumentException("Log size mismatch");
         }
 
-        final int dataVersion = tag.contains("data_version") ? tag.getInt("data_version") : 0;
+        final int dataVersion = tag.getIntOr("data_version", 0);
         if (dataVersion < 0 || dataVersion > DATA_VERSION) {
             throw new IllegalArgumentException("Unsupported version: " + dataVersion);
         }
@@ -434,7 +442,7 @@ public class ServerLevelPlot extends LevelPlot {
         final ServerLevel level = subLevel.getLevel();
 
         if (tag.contains("biome")) {
-            final Identifier location = Identifier.tryParse(tag.getString("biome"));
+            final Identifier location = Identifier.tryParse(tag.getStringOr("biome", ""));
 
             if (location != null) {
                 this.biome = ResourceKey.create(Registries.BIOME, location);
@@ -467,11 +475,11 @@ public class ServerLevelPlot extends LevelPlot {
                 final CompoundTag sectionTag = sectionsTag.getCompoundOrEmpty(sectionKey);
 
                 palettedContainer = BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, sectionTag.getCompoundOrEmpty("block_states"))
-                        .promotePartial(string -> logLoadingErrors(ChunkPos.containing(chunkPos), chunk.getSectionYFromSectionIndex(yIndex), string))
-                        .getOrThrow(ChunkSerializer.ChunkReadException::new);
+                        .promotePartial(string -> logLoadingErrors(ChunkPos.unpack(chunkPos), chunk.getSectionYFromSectionIndex(yIndex), string))
+                        .getOrThrow(SerializableChunkData.ChunkReadException::new);
 
                 final Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
-                final PalettedContainer<Holder<Biome>> biomeContainer = new PalettedContainer<>(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(this.biome), PalettedContainer.Strategy.SECTION_BIOMES);
+                final PalettedContainer<Holder<Biome>> biomeContainer = new PalettedContainer<>(biomeRegistry.getOrThrow(this.biome), level.palettedContainerFactory().biomeStrategy());
 
                 sections[yIndex] = new LevelChunkSection(palettedContainer, biomeContainer);
 
@@ -486,21 +494,23 @@ public class ServerLevelPlot extends LevelPlot {
                     }
 
                     if (hasBlockLight) {
-                        this.lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, new DataLayer(sectionTag.getByteArray("BlockLight")));
+                        this.lightEngine.queueSectionData(LightLayer.BLOCK, sectionPos, sectionTag.getByteArray("BlockLight").map(DataLayer::new).orElse(null));
                     }
 
                     if (hasSkyLight) {
-                        this.lightEngine.queueSectionData(LightLayer.SKY, sectionPos, new DataLayer(sectionTag.getByteArray("SkyLight")));
+                        this.lightEngine.queueSectionData(LightLayer.SKY, sectionPos, sectionTag.getByteArray("SkyLight").map(DataLayer::new).orElse(null));
                     }
                 }
             }
 
             if (dataVersion >= 0) {
-                final LevelChunkTicks<Block> blockTicks = LevelChunkTicks.load(
-                        chunkTag.getListOrEmpty("block_ticks"), id -> BuiltInRegistries.BLOCK.getOptional(Identifier.tryParse(id)), global
+                // PORT-NOTE(mc26.1): LevelChunkTicks.load is gone; ticks parse through SavedTick codecs
+                // (filtered to the chunk) and feed the LevelChunkTicks(List) ctor, like SerializableChunkData.
+                final LevelChunkTicks<Block> blockTicks = new LevelChunkTicks<>(
+                        SavedTick.filterTickListForChunk(chunkTag.read("block_ticks", BLOCK_TICKS_CODEC).orElse(List.of()), global)
                 );
-                final LevelChunkTicks<Fluid> fluidTicks = LevelChunkTicks.load(
-                        chunkTag.getListOrEmpty("fluid_ticks"), id -> BuiltInRegistries.FLUID.getOptional(Identifier.tryParse(id)), global
+                final LevelChunkTicks<Fluid> fluidTicks = new LevelChunkTicks<>(
+                        SavedTick.filterTickListForChunk(chunkTag.read("fluid_ticks", FLUID_TICKS_CODEC).orElse(List.of()), global)
                 );
 
                 //noinspection unchecked
@@ -513,8 +523,9 @@ public class ServerLevelPlot extends LevelPlot {
 
                 for (final Heightmap.Types heightMapType : chunk.getPersistedStatus().heightmapsAfter()) {
                     final String heightMapKey = heightMapType.getSerializationKey();
-                    if (heightMapsTag.contains(heightMapKey)) {
-                        chunk.setHeightmap(heightMapType, heightMapsTag.getLongArray(heightMapKey));
+                    final Optional<long[]> heightmapData = heightMapsTag.getLongArray(heightMapKey);
+                    if (heightmapData.isPresent()) {
+                        chunk.setHeightmap(heightMapType, heightmapData.get());
                     } else {
                         enumset.add(heightMapType);
                     }
@@ -524,7 +535,7 @@ public class ServerLevelPlot extends LevelPlot {
 
                 SablePlotPlatform.INSTANCE.readLightData(chunkTag, level.registryAccess(), chunk);
 
-                chunk.setLightCorrect(chunkTag.getBoolean("isLightOn"));
+                chunk.setLightCorrect(chunkTag.getBooleanOr("isLightOn", false));
             }
 
             // Setup lighting
@@ -537,12 +548,13 @@ public class ServerLevelPlot extends LevelPlot {
             // Add block entities
             for (int i = 0; i < blockEntitiesTag.size(); i++) {
                 final CompoundTag blockEntityTag = blockEntitiesTag.getCompoundOrEmpty(i);
-                final boolean keepBlockEntityPacked = blockEntityTag.getBoolean("keepPacked");
+                final boolean keepBlockEntityPacked = blockEntityTag.getBooleanOr("keepPacked", false);
 
                 if (keepBlockEntityPacked) {
                     chunk.setBlockEntityNbt(blockEntityTag);
                 } else {
-                    final BlockPos blockPos = BlockEntity.getPosFromTag(blockEntityTag);
+                    // PORT-NOTE(mc26.1): getPosFromTag now resolves against the owning chunk's position.
+                    final BlockPos blockPos = BlockEntity.getPosFromTag(chunk.getPos(), blockEntityTag);
                     final BlockEntity blockEntity = BlockEntity.loadStatic(blockPos, chunk.getBlockState(blockPos), blockEntityTag, level.registryAccess());
                     if (blockEntity != null) {
                         chunk.setBlockEntity(blockEntity);
@@ -666,7 +678,8 @@ public class ServerLevelPlot extends LevelPlot {
         this.liftProviders.remove(pos.asLong());
 
         if (state.getBlock() instanceof final BlockSubLevelLiftProvider prov) {
-            this.liftProviders.put(pos.asLong(), new BlockSubLevelLiftProvider.LiftProviderContext(pos, state, Vec3.atLowerCornerOf(prov.sable$getNormal(state).getNormal())));
+            // PORT-NOTE(mc26.1): Direction.getUnitVec3i() was renamed getUnitVec3i().
+            this.liftProviders.put(pos.asLong(), new BlockSubLevelLiftProvider.LiftProviderContext(pos, state, Vec3.atLowerCornerOf(prov.sable$getNormal(state).getUnitVec3i())));
         }
     }
 

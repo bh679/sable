@@ -1,12 +1,9 @@
 package dev.ryanhcode.sable.physics.config.dimension_physics;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.JsonOps;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -85,16 +82,17 @@ public class DimensionPhysicsData {
         return physics.universalDrag().orElseGet(defaultPhysics.universalDrag()::orElseThrow);
     }
 
-    public static class ReloadListener extends SimpleJsonResourceReloadListener {
+    // PORT-NOTE(mc26.1): SimpleJsonResourceReloadListener is now codec-based and generic; the base class
+    // performs the JSON decode (and logs failures) that apply() used to do by hand.
+    public static class ReloadListener extends SimpleJsonResourceReloadListener<DimensionPhysics> {
 
-        private static final Gson GSON = new Gson();
         public static final ReloadListener INSTANCE = new ReloadListener();
 
         public static final String NAME = "dimension_physics";
         public static final Identifier ID = Sable.sablePath(NAME);
 
         public ReloadListener() {
-            super(ReloadListener.GSON, NAME);
+            super(DimensionPhysics.CODEC, FileToIdConverter.json(NAME));
         }
 
         public static void addKeyWithPriority(final Map<ResourceKey<Level>, DimensionPhysics> data, final ResourceKey<Level> key, final DimensionPhysics newProperties) {
@@ -110,18 +108,12 @@ public class DimensionPhysicsData {
         }
 
         @Override
-        protected void apply(final Map<Identifier, JsonElement> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
+        protected void apply(final Map<Identifier, DimensionPhysics> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
             DIMENSION_PHYSICS_DATA.clear();
 
-            for (final Map.Entry<Identifier, JsonElement> entry : map.entrySet()) {
+            for (final Map.Entry<Identifier, DimensionPhysics> entry : map.entrySet()) {
                 try {
-                    final DataResult<DimensionPhysics> dataResult = DimensionPhysics.CODEC.parse(JsonOps.INSTANCE, entry.getValue());
-
-                    if (dataResult.error().isPresent()) {
-                        Sable.LOGGER.error(String.valueOf(dataResult.error().get()));
-                    }
-
-                    final DimensionPhysics dimensionPhysics = dataResult.getOrThrow();
+                    final DimensionPhysics dimensionPhysics = entry.getValue();
                     final ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionPhysics.dimension());
 
                     addKeyWithPriority(DIMENSION_PHYSICS_DATA, dimension, dimensionPhysics);

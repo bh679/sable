@@ -1,13 +1,13 @@
 package dev.ryanhcode.sable.render.dynamic_biome;
 
-import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.rendertype.RenderType;
-
-public class DynamicBiomeTintRenderTypes extends RenderType {
+// PORT-NOTE(mc26.1): RenderType's constructor is private now (RenderSetup factory only), so this class
+// can no longer subclass RenderType. The Veil-based dynamic biome tint render type was already disabled
+// (body commented out upstream); this remains an unreferenced placeholder until the feature is rebuilt
+// on the 26.1 render pipeline.
+public class DynamicBiomeTintRenderTypes {
     private static final String NAME = "dynamic_biome_tint";
 
-    public DynamicBiomeTintRenderTypes(final String string, final VertexFormat vertexFormat, final VertexFormat.Mode mode, final int i, final boolean bl, final boolean bl2, final Runnable runnable, final Runnable runnable2) {
-        super(string, vertexFormat, mode, i, bl, bl2, runnable, runnable2);
+    private DynamicBiomeTintRenderTypes() {
     }
 //
 //    public static void hello() {

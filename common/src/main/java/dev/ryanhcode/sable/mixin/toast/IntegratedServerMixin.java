@@ -21,7 +21,7 @@ public class IntegratedServerMixin implements SableToastableServer {
     @Override
     public void sable$reportSubLevelLoadFailure(final GlobalSavedSubLevelPointer pointer) {
         SystemToast.addOrUpdate(
-                this.minecraft.getToasts(),
+                this.minecraft.getToastManager(),
                 SableToasts.SUB_LEVEL_LOAD_FAILURE,
                 Component.translatable("sub_level.toast.loadFailure", Component.literal(pointer.toString())).withStyle(ChatFormatting.RED),
                 Component.translatable("sub_level.toast.checkLog")
@@ -31,7 +31,7 @@ public class IntegratedServerMixin implements SableToastableServer {
     @Override
     public void sable$reportSubLevelSaveFailure(final SubLevelData data) {
         SystemToast.addOrUpdate(
-                this.minecraft.getToasts(),
+                this.minecraft.getToastManager(),
                 SableToasts.SUB_LEVEL_SAVE_FAILURE,
                 Component.translatable("sub_level.toast.saveFailure", Component.literal(data.toString())).withStyle(ChatFormatting.RED),
                 Component.translatable("sub_level.toast.checkLog")
@@ -41,7 +41,7 @@ public class IntegratedServerMixin implements SableToastableServer {
     @Override
     public void sable$reportSubLevelPhysicsFailure(final ServerSubLevel data) {
         SystemToast.addOrUpdate(
-                this.minecraft.getToasts(),
+                this.minecraft.getToastManager(),
                 SableToasts.SUB_LEVEL_PHYSICS_FAILURE,
                 Component.translatable("sub_level.toast.physicsFailure", Component.literal(data.toString())).withStyle(ChatFormatting.RED),
                 Component.translatable("sub_level.toast.attemptingRecovery")

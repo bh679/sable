@@ -297,7 +297,7 @@ public class ClientSubLevel extends SubLevel implements ClientSubLevelAccess {
      */
     @Override
     public Pose3dc renderPose() {
-        final float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        final float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
 
         if (this.lastRenderPosePartialTick == pt) {
             this.lastRenderPosePartialTick = pt;

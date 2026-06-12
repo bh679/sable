@@ -1,16 +1,10 @@
 package dev.ryanhcode.sable.mixin.sublevel_render;
 
-import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.mixinterface.sublevel_render.vanilla.RenderSectionExtension;
-import foundry.veil.api.client.render.VeilRenderSystem;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
-import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,13 +14,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Set;
 
 /**
- * Fixes distance check used for priority and chunk building to take sublevels into account
+ * Notifies sub-level render data when one of its sections is marked dirty.
  */
 @Mixin(SectionRenderDispatcher.RenderSection.class)
 public class RenderSectionMixin implements RenderSectionExtension {
 
-    @Shadow
-    private AABB bb;
     @Shadow
     private boolean dirty;
 
@@ -38,7 +30,8 @@ public class RenderSectionMixin implements RenderSectionExtension {
     @Inject(method = "setDirty", at = @At("HEAD"))
     public void setDirty(final boolean playerChanged, final CallbackInfo ci) {
         if (this.sable$listening && !this.dirty && this.sable$listeners != null) {
-            VeilRenderSystem.renderThreadExecutor().execute(() -> {
+            // mc26.1: Veil's render-thread executor replaced with the client executor.
+            Minecraft.getInstance().execute(() -> {
                 for (final DirtyListener listener : this.sable$listeners) {
                     listener.markDirty((SectionRenderDispatcher.RenderSection) (Object) this);
                 }
@@ -46,19 +39,10 @@ public class RenderSectionMixin implements RenderSectionExtension {
         }
     }
 
-    /**
-     * @author RyanH
-     * @reason Fixes distance check to take sublevels into account
-     */
-    @Overwrite
-    public double getDistToPlayerSqr() {
-        final ClientLevel level = Minecraft.getInstance().level;
-        final Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        final double x = this.bb.minX + 8.0;
-        final double y = this.bb.minY + 8.0;
-        final double z = this.bb.minZ + 8.0;
-        return Sable.HELPER.distanceSquaredWithSubLevels(level, camera.position(), x, y, z);
-    }
+    // PORT-NOTE(mc26.1): the getDistToPlayerSqr() @Overwrite is gone — the
+    // method no longer exists; section build priority now flows through
+    // CompileTaskDynamicQueue. Far-away plot sections may compile at slightly
+    // wrong priority until this is re-implemented against the new queue.
 
     @Override
     public void sable$addDirtyListener(final DirtyListener listener) {

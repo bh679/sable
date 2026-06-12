@@ -29,6 +29,9 @@ public class SubLevelCamera extends Camera {
     }
 
     public void setPose(@Nullable final Pose3dc pose) {
+        // PORT-NOTE(mc26.1): Camera no longer exposes mutable look/up/left
+        // vectors — rotation() is the single source of truth, so only the
+        // quaternion is written now.
         if (pose != null) {
             final Vec3 pos = pose.transformPositionInverse(this.renderCamera.position());
 
@@ -39,21 +42,13 @@ public class SubLevelCamera extends Camera {
             this.pos = pos;
 
             rotation.getEulerAnglesYXZ(this.rotationYXZ);
-
-            this.getLookVector().set(0.0F, 0.0F, -1.0F).rotate(rotation);
-            this.getUpVector().set(0.0F, 1.0F, 0.0F).rotate(rotation);
-            this.getLeftVector().set(-1.0F, 0.0F, 0.0F).rotate(rotation);
         } else {
             this.pos = this.renderCamera.position();
             this.blockPosition.set(this.pos.x, this.pos.y, this.pos.z);
-            this.rotationYXZ.set(this.renderCamera.getXRot(), this.renderCamera.getYRot(), 0);
+            this.rotationYXZ.set(this.renderCamera.xRot(), this.renderCamera.yRot(), 0);
 
             final Quaternionf rotation = this.rotation();
             rotation.set(this.renderCamera.rotation());
-
-            this.getLookVector().set(0.0F, 0.0F, -1.0F).rotate(rotation);
-            this.getUpVector().set(0.0F, 1.0F, 0.0F).rotate(rotation);
-            this.getLeftVector().set(-1.0F, 0.0F, 0.0F).rotate(rotation);
         }
     }
 
@@ -63,28 +58,28 @@ public class SubLevelCamera extends Camera {
     }
 
     @Override
-    public @NotNull Vec3 getPosition() {
+    public @NotNull Vec3 position() {
         return this.pos;
     }
 
     @Override
-    public @NotNull BlockPos getBlockPosition() {
+    public @NotNull BlockPos blockPosition() {
         return this.blockPosition;
     }
 
     @Override
-    public float getXRot() {
+    public float xRot() {
         return (float) (180.0 / Math.PI * -this.rotationYXZ.x);
     }
 
     @Override
-    public float getYRot() {
+    public float yRot() {
         return (float) (180.0 / Math.PI * -this.rotationYXZ.y + 180.0);
     }
 
     @Override
-    public @NotNull Entity getEntity() {
-        return this.renderCamera.getEntity();
+    public Entity entity() {
+        return this.renderCamera.entity();
     }
 
     @Override
@@ -98,8 +93,8 @@ public class SubLevelCamera extends Camera {
     }
 
     @Override
-    public @NotNull NearPlane getNearPlane() {
-        return this.renderCamera.getNearPlane();
+    public @NotNull NearPlane getNearPlane(final float fov) {
+        return this.renderCamera.getNearPlane(fov);
     }
 
     @Override
@@ -110,11 +105,6 @@ public class SubLevelCamera extends Camera {
     @Override
     public void reset() {
         this.renderCamera.reset();
-    }
-
-    @Override
-    public float getPartialTickTime() {
-        return this.renderCamera.getPartialTickTime();
     }
 
     public Camera getRenderCamera() {

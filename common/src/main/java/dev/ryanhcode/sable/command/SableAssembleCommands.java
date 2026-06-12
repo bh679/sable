@@ -50,7 +50,7 @@ public class SableAssembleCommands {
                                                 .executes(SableAssembleCommands::executeShatterSubLevelCommand)))
                                 .then(Commands.literal("connected")
                                         .executes((ctx) ->
-                                                SableAssembleCommands.executeShatterConnected(ctx, BlockPos.containing(ctx.getSource().position().subtract(0, 1, 0)), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
+                                                SableAssembleCommands.executeShatterConnected(ctx, BlockPos.containing(ctx.getSource().getPosition().subtract(0, 1, 0)), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
                                         .then(Commands.argument("from", BlockPosArgument.blockPos())
                                                 .executes((ctx) ->
                                                         SableAssembleCommands.executeShatterConnected(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "from"), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
@@ -59,12 +59,12 @@ public class SableAssembleCommands {
                                                                 SableAssembleCommands.executeShatterConnected(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "from"), IntegerArgumentType.getInteger(ctx, "capacity"))))))
                                 .then(Commands.literal("sphere")
                                         .then(Commands.argument("radius", IntegerArgumentType.integer(0, 128))
-                                                .executes((ctx) -> SableAssembleCommands.executeShatterSphereCommand(ctx, BlockPos.containing(ctx.getSource().position())))
+                                                .executes((ctx) -> SableAssembleCommands.executeShatterSphereCommand(ctx, BlockPos.containing(ctx.getSource().getPosition())))
                                                 .then(Commands.argument("origin", BlockPosArgument.blockPos())
                                                         .executes((ctx) -> SableAssembleCommands.executeShatterSphereCommand(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "origin"))))))
                                 .then(Commands.literal("cube")
                                         .then(Commands.argument("range", IntegerArgumentType.integer(0, 128))
-                                                .executes((ctx) -> SableAssembleCommands.executeShatterCubeCommand(ctx, BlockPos.containing(ctx.getSource().position())))
+                                                .executes((ctx) -> SableAssembleCommands.executeShatterCubeCommand(ctx, BlockPos.containing(ctx.getSource().getPosition())))
                                                 .then(Commands.argument("origin", BlockPosArgument.blockPos())
                                                         .executes((ctx) -> SableAssembleCommands.executeShatterCubeCommand(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "origin"))))))
                                 .then(Commands.literal("area")
@@ -79,7 +79,7 @@ public class SableAssembleCommands {
 
                         .then(Commands.literal("connected")
                                 .executes((ctx) ->
-                                        SableAssembleCommands.executeAssembleConnectedCommand(ctx, BlockPos.containing(ctx.getSource().position().subtract(0, 1, 0)), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
+                                        SableAssembleCommands.executeAssembleConnectedCommand(ctx, BlockPos.containing(ctx.getSource().getPosition().subtract(0, 1, 0)), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
                                 .then(Commands.argument("from", BlockPosArgument.blockPos())
                                         .executes((ctx) ->
                                                 SableAssembleCommands.executeAssembleConnectedCommand(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "from"), DEFAULT_CONNECTED_ASSEMBLY_CAPACITY))
@@ -89,13 +89,13 @@ public class SableAssembleCommands {
 
                         .then(Commands.literal("sphere")
                                 .then(Commands.argument("radius", IntegerArgumentType.integer(0, 256))
-                                        .executes(ctx -> SableAssembleCommands.executeAssembleSphereCommand(ctx, BlockPos.containing(ctx.getSource().position())))
+                                        .executes(ctx -> SableAssembleCommands.executeAssembleSphereCommand(ctx, BlockPos.containing(ctx.getSource().getPosition())))
                                         .then(Commands.argument("origin", BlockPosArgument.blockPos())
                                                 .executes(ctx -> SableAssembleCommands.executeAssembleSphereCommand(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "origin"))))))
 
                         .then(Commands.literal("cube")
                                 .then(Commands.argument("range", IntegerArgumentType.integer(0, 256))
-                                        .executes(ctx -> SableAssembleCommands.executeAssembleCubeCommand(ctx, BlockPos.containing(ctx.getSource().position())))
+                                        .executes(ctx -> SableAssembleCommands.executeAssembleCubeCommand(ctx, BlockPos.containing(ctx.getSource().getPosition())))
                                         .then(Commands.argument("origin", BlockPosArgument.blockPos())
                                                 .executes(ctx -> SableAssembleCommands.executeAssembleCubeCommand(ctx, BlockPosArgument.getLoadedBlockPos(ctx, "origin")))))));
     }

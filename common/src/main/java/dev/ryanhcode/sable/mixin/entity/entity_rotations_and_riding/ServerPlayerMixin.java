@@ -6,11 +6,12 @@ import com.mojang.authlib.GameProfile;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.SubLevelHelper;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -25,28 +26,31 @@ public abstract class ServerPlayerMixin extends Player {
 
     @Shadow public ServerGamePacketListenerImpl connection;
 
-    public ServerPlayerMixin(final Level level, final BlockPos blockPos, final float f, final GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
+    public ServerPlayerMixin(final Level level, final GameProfile gameProfile) {
+        super(level, gameProfile);
     }
 
-    @WrapOperation(method = "startRiding", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;teleport(DDDFF)V"))
-    private void sable$adjustTeleportPacket(final ServerGamePacketListenerImpl instance, final double x, final double y, final double z, final float rot1, final float rot2, final Operation<Void> original) {
+    // PORT-NOTE(mc26.1): ServerPlayer.startRiding now teleports via
+    // ServerGamePacketListenerImpl.teleport(PositionMoveRotation, Set<Relative>); the wrap follows.
+    // ClientboundPlayerPositionPacket is now (id, PositionMoveRotation, relatives).
+    @WrapOperation(method = "startRiding", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;teleport(Lnet/minecraft/world/entity/PositionMoveRotation;Ljava/util/Set;)V"))
+    private void sable$adjustTeleportPacket(final ServerGamePacketListenerImpl instance, final PositionMoveRotation change, final Set<Relative> relatives, final Operation<Void> original) {
         final Entity vehicle = this.getVehicle();
 
         if (vehicle == null) {
-            original.call(instance, x, y, z, rot1, rot2);
+            original.call(instance, change, relatives);
             return;
         }
 
         final SubLevel containingSubLevel = Sable.HELPER.getContaining(vehicle);
 
         if (containingSubLevel == null) {
-            original.call(instance, x, y, z, rot1, rot2);
+            original.call(instance, change, relatives);
             return;
         }
 
-        this.absMoveTo(x, y, z, rot1, rot2);
+        this.absSnapTo(change.position().x, change.position().y, change.position().z, change.yRot(), change.xRot());
         final Vec3 pos = containingSubLevel.logicalPose().transformPositionInverse(this.position());
-        this.connection.send(new ClientboundPlayerPositionPacket(pos.x, pos.y, pos.z, rot1, rot2, Set.of(), -1));
+        this.connection.send(new ClientboundPlayerPositionPacket(-1, new PositionMoveRotation(pos, Vec3.ZERO, change.yRot(), change.xRot()), relatives));
     }
 }

@@ -7,9 +7,9 @@ import dev.ryanhcode.sable.sublevel.storage.holding.SubLevelHoldingChunkMap;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.TicketStorage;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LightChunkGetter;
 import net.minecraft.world.level.entity.ChunkStatusUpdateListener;
@@ -41,8 +41,9 @@ public class ChunkMapMixin {
     @Final
     private ServerLevel level;
 
+    // PORT-NOTE(mc26.1): ChunkMap ctor dropped ChunkProgressListener and gained a TicketStorage param.
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void sable$init(final ServerLevel serverLevel, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final DataFixer dataFixer, final StructureTemplateManager structureTemplateManager, final Executor executor, final BlockableEventLoop blockableEventLoop, final LightChunkGetter lightChunkGetter, final ChunkGenerator chunkGenerator, final ChunkProgressListener chunkProgressListener, final ChunkStatusUpdateListener chunkStatusUpdateListener, final Supplier supplier, final int i, final boolean bl, final CallbackInfo ci) {
+    private void sable$init(final ServerLevel serverLevel, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final DataFixer dataFixer, final StructureTemplateManager structureTemplateManager, final Executor executor, final BlockableEventLoop blockableEventLoop, final LightChunkGetter lightChunkGetter, final ChunkGenerator chunkGenerator, final ChunkStatusUpdateListener chunkStatusUpdateListener, final Supplier supplier, final TicketStorage ticketStorage, final int i, final boolean bl, final CallbackInfo ci) {
         this.unloadQueue = new ConcurrentLinkedDeque<>();
     }
 

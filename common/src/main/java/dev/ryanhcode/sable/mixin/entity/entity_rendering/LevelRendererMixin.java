@@ -13,8 +13,6 @@ import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import foundry.veil.api.client.render.MatrixStack;
-import foundry.veil.api.client.render.VeilRenderBridge;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
@@ -30,7 +28,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public class LevelRendererMixin {
 
-    @Inject(method = "renderEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;getYRot()F"))
+    // PORT-TODO(mc26.1): LevelRenderer#renderEntity and the direct
+    // EntityRenderDispatcher#render call no longer exist — entity rendering
+    // moved to extract/submit (extractVisibleEntities/submitEntities with
+    // EntityRenderState). Both injections below are marked require = 0 so they
+    // skip silently; entities on moving sub-levels render at their synced
+    // world coordinates (no render-pose smoothing/rotation) until this is
+    // re-targeted at EntityRenderer#extractRenderState.
+    @Inject(method = "renderEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;getYRot()F"), require = 0)
     private void renderEntityOnSubLevel(final Entity entity,
                                         final double cameraX,
                                         final double cameraY,
@@ -81,7 +86,7 @@ public class LevelRendererMixin {
         entityZ.set(transformedPosition.z);
     }
 
-    @WrapOperation(method = "renderEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"))
+    @WrapOperation(method = "renderEntity", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;render(Lnet/minecraft/world/entity/Entity;DDDFFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V"), require = 0)
     private void renderEntity(final EntityRenderDispatcher instance,
                               final Entity entity,
                               final double x,
@@ -96,11 +101,11 @@ public class LevelRendererMixin {
                               @Share("renderPose") final LocalRef<Pose3dc> renderPoseShare) {
         final Pose3dc pose = renderPoseShare.get();
         if (pose != null) {
-            final MatrixStack matrixStack = VeilRenderBridge.create(poseStack);
-            matrixStack.matrixPush();
-            matrixStack.rotateAround(pose.orientation(), x, y, z);
+            // mc26.1: Veil's MatrixStack bridge replaced with vanilla PoseStack ops.
+            poseStack.pushPose();
+            poseStack.rotateAround(new Quaternionf(pose.orientation()), (float) x, (float) y, (float) z);
             original.call(instance, entity, x, y, z, g, h, poseStack, multiBufferSource, i);
-            matrixStack.matrixPop();
+            poseStack.popPose();
         } else {
             original.call(instance, entity, x, y, z, g, h, poseStack, multiBufferSource, i);
         }

@@ -17,12 +17,13 @@ import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.projectile.windcharge.AbstractWindCharge;
+import net.minecraft.world.entity.projectile.hurtingprojectile.windcharge.AbstractWindCharge;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ExplosionDamageCalculator;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
@@ -32,31 +33,27 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-@Mixin(Explosion.class)
+// PORT-NOTE(mc26.1): Explosion became an interface; the block-explosion algorithm now lives in
+// ServerExplosion (explode() -> calculateExplodedPositions(), double x/y/z -> Vec3 center,
+// Level -> ServerLevel). Local capture order/types in calculateExplodedPositions are unchanged.
+@Mixin(ServerExplosion.class)
 public class ExplosionMixin {
 
 
     @Shadow
     @Final
-    private Level level;
+    private ServerLevel level;
 
     @Shadow
     @Final
-    private double x;
-
-    @Shadow
-    @Final
-    private double y;
-
-    @Shadow
-    @Final
-    private double z;
+    private Vec3 center;
 
     @Shadow
     @Final
@@ -64,13 +61,13 @@ public class ExplosionMixin {
 
     @Shadow @Final private @Nullable Entity source;
 
-    @Inject(method = "explode", at = @At("HEAD"))
-    private void sable$preExplode(final CallbackInfo ci, @Share("explodedSet") final LocalRef<Set<BlockPos>> explodedSet) {
+    @Inject(method = "calculateExplodedPositions", at = @At("HEAD"))
+    private void sable$preExplode(final CallbackInfoReturnable<List<BlockPos>> cir, @Share("explodedSet") final LocalRef<Set<BlockPos>> explodedSet) {
         explodedSet.set(new ObjectOpenHashSet<>());
     }
 
-    @Inject(method = "explode", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/ExplosionDamageCalculator;getBlockExplosionResistance(Lnet/minecraft/world/level/Explosion;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/material/FluidState;)Ljava/util/Optional;"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void sable$redirectBlockExplosionResistance(final CallbackInfo ci,
+    @Inject(method = "calculateExplodedPositions", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/ExplosionDamageCalculator;getBlockExplosionResistance(Lnet/minecraft/world/level/Explosion;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/material/FluidState;)Ljava/util/Optional;"), locals = LocalCapture.CAPTURE_FAILHARD)
+    private void sable$redirectBlockExplosionResistance(final CallbackInfoReturnable<List<BlockPos>> cir,
                                                         final Set<BlockPos> set,
                                                         final int i,
                                                         final int j,
@@ -103,7 +100,7 @@ public class ExplosionMixin {
         for (final SubLevel subLevel : subLevels) {
             final Pose3d pose = subLevel.logicalPose();
             final Vec3 localRayPosition = pose.transformPositionInverse(new Vec3(d4, d6, d8));
-            final Vec3 localExplosionPosition = pose.transformPositionInverse(new Vec3(this.x, this.y, this.z));
+            final Vec3 localExplosionPosition = pose.transformPositionInverse(this.center);
 
             blockpos = BlockPos.containing(localRayPosition);
             blockstate = this.level.getBlockState(blockpos);

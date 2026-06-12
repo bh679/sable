@@ -40,8 +40,9 @@ public class ChunkMapMixin {
         }
     }
 
+    // PORT-NOTE(mc26.1): saveChunkIfNeeded gained a `long now` parameter.
     @Inject(method = "saveChunkIfNeeded", at = @At("HEAD"), cancellable = true)
-    private void sable$saveChunkIfNeeded(final ChunkHolder chunkHolder, final CallbackInfoReturnable<Boolean> cir) {
+    private void sable$saveChunkIfNeeded(final ChunkHolder chunkHolder, final long now, final CallbackInfoReturnable<Boolean> cir) {
         if (chunkHolder instanceof PlotChunkHolder) {
             cir.setReturnValue(false);
         }
@@ -63,7 +64,7 @@ public class ChunkMapMixin {
         final LevelPlot plot = container.getPlot(new ChunkPos(i, j));
         if (plot != null) {
             final ServerSubLevel subLevel = (ServerSubLevel) plot.getSubLevel();
-            cir.setReturnValue(subLevel.getTrackingPlayers().contains(serverPlayer.getGameProfile().getId()));
+            cir.setReturnValue(subLevel.getTrackingPlayers().contains(serverPlayer.getGameProfile().id()));
         }
     }
 

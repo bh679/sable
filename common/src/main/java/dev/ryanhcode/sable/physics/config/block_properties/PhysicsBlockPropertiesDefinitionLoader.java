@@ -1,10 +1,5 @@
 package dev.ryanhcode.sable.physics.config.block_properties;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.JsonOps;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.mixinterface.block_properties.BlockStateExtension;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -13,6 +8,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -28,16 +24,17 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 
-public class PhysicsBlockPropertiesDefinitionLoader extends SimpleJsonResourceReloadListener {
+// PORT-NOTE(mc26.1): SimpleJsonResourceReloadListener is now codec-based and generic; the base class
+// performs the JSON decode (and logs failures) that apply() used to do by hand.
+public class PhysicsBlockPropertiesDefinitionLoader extends SimpleJsonResourceReloadListener<PhysicsBlockPropertiesDefinition> {
     public static final String NAME = "physics_block_properties";
     public static final Identifier ID = Sable.sablePath(NAME);
 
-    protected static final Gson GSON = new Gson();
     public static final PhysicsBlockPropertiesDefinitionLoader INSTANCE = new PhysicsBlockPropertiesDefinitionLoader();
     private final ObjectList<PhysicsBlockPropertiesDefinition> definitions = new ObjectArrayList<>();
 
     private PhysicsBlockPropertiesDefinitionLoader() {
-        super(GSON, NAME);
+        super(PhysicsBlockPropertiesDefinition.CODEC, FileToIdConverter.json(NAME));
     }
 
     @Override
@@ -46,24 +43,9 @@ public class PhysicsBlockPropertiesDefinitionLoader extends SimpleJsonResourceRe
     }
 
     @Override
-    protected void apply(final Map<Identifier, JsonElement> map, final ResourceManager resourceManager, final ProfilerFiller profilerFiller) {
+    protected void apply(final Map<Identifier, PhysicsBlockPropertiesDefinition> map, final ResourceManager resourceManager, final ProfilerFiller profilerFiller) {
         this.definitions.clear();
-
-        for (final Map.Entry<Identifier, JsonElement> entry : map.entrySet()) {
-            final Identifier file = entry.getKey();
-            final JsonElement json = entry.getValue();
-
-            final DataResult<Pair<PhysicsBlockPropertiesDefinition, JsonElement>> decoded = PhysicsBlockPropertiesDefinition.CODEC.decode(JsonOps.INSTANCE, json);
-
-            decoded.result().ifPresent(pair -> {
-                final PhysicsBlockPropertiesDefinition definition = pair.getFirst();
-                this.definitions.add(definition);
-            });
-
-            decoded.error().ifPresent(error -> {
-                Sable.LOGGER.error("Error while loading physics block properties entry: {}", error);
-            });
-        }
+        this.definitions.addAll(map.values());
 
         // Sort by priority
         this.definitions.sort(Comparator.comparingInt(PhysicsBlockPropertiesDefinition::priority));
@@ -79,7 +61,7 @@ public class PhysicsBlockPropertiesDefinitionLoader extends SimpleJsonResourceRe
         if (selector.tag()) {
             // The selector is a tag, let's pick all blocks
             final TagKey<Block> tagKey = TagKey.create(Registries.BLOCK, selector.id());
-            final Optional<HolderSet.Named<Block>> tagBlocks = BuiltInRegistries.BLOCK.getTag(tagKey);
+            final Optional<HolderSet.Named<Block>> tagBlocks = BuiltInRegistries.BLOCK.get(tagKey);
 
             if (tagBlocks.isPresent()) {
                 final HolderSet.Named<Block> blockHolders = tagBlocks.get();
@@ -95,7 +77,7 @@ public class PhysicsBlockPropertiesDefinitionLoader extends SimpleJsonResourceRe
         } else {
             if (BuiltInRegistries.BLOCK.containsKey(selector.id())) {
                 // The selector is not a tag, let's just get the block
-                final Block block = BuiltInRegistries.BLOCK.get(selector.id());
+                final Block block = BuiltInRegistries.BLOCK.getValue(selector.id());
                 blocks.add(block);
             } else {
                 Sable.LOGGER.error("Failed to apply tag physics properties. Unknown block: {}", selector.id());

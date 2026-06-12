@@ -2,8 +2,8 @@ package dev.ryanhcode.sable.sublevel.render.vanilla;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.world.level.CardinalLighting;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
@@ -39,8 +39,9 @@ public final class SingleBlockSubLevelWrapper implements BlockAndTintGetter {
     }
 
     @Override
-    public float getShade(final Direction direction, final boolean bl) {
-        return this.level.getShade(direction, bl);
+    public CardinalLighting cardinalLighting() {
+        // mc26.1: directional shading moved behind CardinalLighting.
+        return this.level != null ? this.level.cardinalLighting() : CardinalLighting.DEFAULT;
     }
 
     @Override
@@ -60,7 +61,8 @@ public final class SingleBlockSubLevelWrapper implements BlockAndTintGetter {
 
     @Override
     public boolean canSeeSky(final BlockPos pos) {
-        return this.getBrightness(LightLayer.SKY, this.globalPos) >= this.getMaxLightLevel();
+        // mc26.1: getMaxLightLevel() removed; light levels are fixed 0..15.
+        return this.getBrightness(LightLayer.SKY, this.globalPos) >= 15;
     }
 
     @Override
@@ -97,7 +99,7 @@ public final class SingleBlockSubLevelWrapper implements BlockAndTintGetter {
     }
 
     @Override
-    public int getMinBuildHeight() {
+    public int getMinY() {
         return this.level.getMinY();
     }
 

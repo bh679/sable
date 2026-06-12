@@ -10,6 +10,7 @@ import net.minecraft.server.level.ChunkResult;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -48,7 +49,9 @@ public class LevelAccelerator implements BlockGetter {
 
     public void setBlockFast(final BlockPos blockPos, final BlockState blockState) {
         final LevelChunk chunk = this.getChunk(blockPos);
-        final BlockState blockState2 = chunk.setBlockState(blockPos, blockState, false);
+        // PORT-NOTE(mc26.1): setBlockState's boolean isMoving param became int update flags;
+        // UPDATE_ALL matches the legacy (isMoving=false) callback behavior (onRemove + onPlace).
+        final BlockState blockState2 = chunk.setBlockState(blockPos, blockState, Block.UPDATE_ALL);
         if (blockState2 == null) {
             return;
         }
@@ -142,7 +145,7 @@ public class LevelAccelerator implements BlockGetter {
     }
 
     @Override
-    public int getMinBuildHeight() {
+    public int getMinY() {
         return this.minBuildHeight;
     }
 }

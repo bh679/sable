@@ -25,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
+import net.minecraft.world.level.chunk.PalettedContainerFactory;
 import net.minecraft.world.level.chunk.UpgradeData;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.phys.Vec3;
@@ -170,10 +171,13 @@ public abstract class LevelPlot {
         final int sectionCount = level.getSectionsCount();
         final LevelChunkSection[] sections = new LevelChunkSection[sectionCount];
 
+        // PORT-NOTE(mc26.1): PalettedContainer construction goes through the level's PalettedContainerFactory
+        // (registry-id strategies); the old (IdMap, default, Strategy) ctor is gone.
+        final PalettedContainerFactory containerFactory = level.palettedContainerFactory();
         for (int i = 0; i < sectionCount; ++i) {
             final Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
-            final PalettedContainer<BlockState> states = new PalettedContainer(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
-            final PalettedContainer<Holder<Biome>> biomes = new PalettedContainer(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(this.biome), PalettedContainer.Strategy.SECTION_BIOMES);
+            final PalettedContainer<BlockState> states = containerFactory.createForBlockStates();
+            final PalettedContainer<Holder<Biome>> biomes = new PalettedContainer<>(biomeRegistry.getOrThrow(this.biome), containerFactory.biomeStrategy());
 
             sections[i] = new LevelChunkSection(states, biomes);
         }

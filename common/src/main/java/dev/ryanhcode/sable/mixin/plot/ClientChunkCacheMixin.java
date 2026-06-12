@@ -6,12 +6,12 @@ import dev.ryanhcode.sable.mixinterface.loaded_chunk_debug.DebugChunkProviderAtt
 import dev.ryanhcode.sable.platform.SableChunkEventPlatform;
 import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
+import net.minecraft.world.level.levelgen.Heightmap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -26,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Consumer;
 
@@ -105,8 +106,9 @@ public abstract class ClientChunkCacheMixin implements DebugChunkProviderAttachm
         }
     }
 
+    // PORT-NOTE(mc26.1): heightmaps now arrive pre-decoded as Map<Heightmap.Types, long[]> instead of a CompoundTag.
     @Inject(method = "replaceWithPacketData", at = @At("HEAD"), cancellable = true)
-    private void replaceWithPacketData(final int x, final int z, final FriendlyByteBuf friendlyByteBuf, final CompoundTag compoundTag,
+    private void replaceWithPacketData(final int x, final int z, final FriendlyByteBuf friendlyByteBuf, final Map<Heightmap.Types, long[]> heightmaps,
                                        final Consumer<ClientboundLevelChunkPacketData.BlockEntityTagOutput> consumer, final CallbackInfoReturnable<LevelChunk> cir) {
         final SubLevelContainer container = this.sable$getPlotContainer();
 
@@ -119,10 +121,10 @@ public abstract class ClientChunkCacheMixin implements DebugChunkProviderAttachm
                     this.level.unload(levelChunk);
                 }
                 levelChunk = new LevelChunk(this.level, chunkPos);
-                levelChunk.replaceWithPacketData(friendlyByteBuf, compoundTag, consumer);
+                levelChunk.replaceWithPacketData(friendlyByteBuf, heightmaps, consumer);
                 container.newPopulatedChunk(chunkPos, levelChunk);
             } else {
-                levelChunk.replaceWithPacketData(friendlyByteBuf, compoundTag, consumer);
+                levelChunk.replaceWithPacketData(friendlyByteBuf, heightmaps, consumer);
             }
 
             this.level.onChunkLoaded(chunkPos);

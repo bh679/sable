@@ -17,12 +17,14 @@ import dev.ryanhcode.sable.util.SableNBTUtils;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,13 +44,20 @@ public class SubLevelTrackingPointSavedData extends SavedData implements SubLeve
     }
 
     public static SubLevelTrackingPointSavedData getOrLoad(final ServerLevel level) {
+        // PORT-NOTE(mc26.1): SavedData.Factory was replaced by codec-based SavedDataType. The CompoundTag
+        // codec bridges to the legacy load/save NBT format. SavedDataType requires a non-null DataFixTypes;
+        // SAVED_DATA_COMMAND_STORAGE is the conventional inert choice for modded data (no fixers apply).
+        // File moves from data/sable_tracking_points.dat to data/sable/sable_tracking_points.dat (namespaced id).
         return level.getDataStorage().computeIfAbsent(
-                new Factory<>(
+                new SavedDataType<>(
+                        Identifier.fromNamespaceAndPath("sable", SubLevelTrackingPointSavedData.FILE_ID),
                         () -> new SubLevelTrackingPointSavedData(level),
-                        (tag, provider) -> SubLevelTrackingPointSavedData.load(level, tag),
-                        null
-                ),
-                SubLevelTrackingPointSavedData.FILE_ID);
+                        CompoundTag.CODEC.xmap(
+                                tag -> SubLevelTrackingPointSavedData.load(level, tag),
+                                data -> data.save(new CompoundTag())
+                        ),
+                        DataFixTypes.SAVED_DATA_COMMAND_STORAGE
+                ));
     }
 
     private static SubLevelTrackingPointSavedData load(final ServerLevel level, final CompoundTag tag) {
@@ -60,7 +69,7 @@ public class SubLevelTrackingPointSavedData extends SavedData implements SubLeve
             final UUID uuid = UUID.fromString(key);
             final CompoundTag pointTag = trackingPointsTag.getCompoundOrEmpty(key);
 
-            final boolean inSubLevel = pointTag.getBoolean("InSubLevel");
+            final boolean inSubLevel = pointTag.getBooleanOr("InSubLevel", false);
             final GlobalSavedSubLevelPointer pointer = pointTag.contains("SubLevelPointer") ?
                     GlobalSavedSubLevelPointer.CODEC.parse(NbtOps.INSTANCE, pointTag.getCompoundOrEmpty("SubLevelPointer")).getOrThrow() :
                     null;
@@ -85,8 +94,8 @@ public class SubLevelTrackingPointSavedData extends SavedData implements SubLeve
         return data;
     }
 
-    @Override
-    public @NotNull CompoundTag save(final @NotNull CompoundTag compoundTag, final HolderLookup.@NotNull Provider provider) {
+    // PORT-NOTE(mc26.1): no longer a SavedData override — invoked by the CompoundTag codec bridge above.
+    public @NotNull CompoundTag save(final @NotNull CompoundTag compoundTag) {
         final SubLevelContainer container = SubLevelContainer.getContainer(this.level);
         assert container != null : "Sub-level container is null";
 

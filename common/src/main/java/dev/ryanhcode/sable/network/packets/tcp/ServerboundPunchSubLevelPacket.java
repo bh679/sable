@@ -100,10 +100,11 @@ public record ServerboundPunchSubLevelPacket(BlockPos punchedBlock, Vector3dc lo
 
         final double attributeStrength = Objects.requireNonNull(player.getAttribute(SableAttributes.PUNCH_STRENGTH)).getValue();
         final int customCooldown = SableAttributes.getPushCooldownTicks(player);
-        if (!physicsSystem.tryPunch(player.getGameProfile().getId(), customCooldown)) {
+        // PORT-NOTE(mc26.1): GameProfile.getId() is now id(); ItemCooldowns keys on ItemStack.
+        if (!physicsSystem.tryPunch(player.getGameProfile().id(), customCooldown)) {
             return;
         }
-        player.getCooldowns().addCooldown(player.getMainHandItem().getItem(), customCooldown);
+        player.getCooldowns().addCooldown(player.getMainHandItem(), customCooldown);
 
         final double downwardStrengthMultiplier = SableConfig.SUB_LEVEL_PUNCH_DOWNWARD_STRENGTH_MULTIPLIER.getAsDouble();
 

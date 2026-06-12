@@ -27,14 +27,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.entity.Visibility;
+import net.minecraft.world.level.storage.LevelResource;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.*;
 
 public class SubLevelHoldingChunkMap implements AutoCloseable {
@@ -84,16 +86,18 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
         this.level = level;
         this.container = container;
 
-        final File worldFolder = level.getChunkSource().getDataStorage().dataFolder.getParentFile();
-        final File subLevelsFolder = new File(worldFolder, "sublevels");
+        // PORT-NOTE(mc26.1): SavedDataStorage.dataFolder is private (and a Path) now; resolve the dimension
+        // folder through the public DimensionType.getStorageFolder + MinecraftServer.getWorldPath instead.
+        final Path dimensionFolder = DimensionType.getStorageFolder(level.dimension(), level.getServer().getWorldPath(LevelResource.ROOT));
+        final Path subLevelsFolder = dimensionFolder.resolve("sublevels");
 
-        subLevelsFolder.mkdirs();
+        subLevelsFolder.toFile().mkdirs();
 
-        this.storage = new SubLevelStorage(subLevelsFolder.toPath());
+        this.storage = new SubLevelStorage(subLevelsFolder);
     }
 
     public void updateChunkStatus(final ChunkPos chunkPos, final boolean loaded) {
-        final long key = chunkPos.toLong();
+        final long key = chunkPos.pack();
 
         if (!loaded) {
             this.chunksToUnload.add(key);
@@ -116,7 +120,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
             this.queuedUnloads.remove(chunkPos);
         }
 
-        final SubLevelHoldingChunk existingChunk = this.loadedHoldingChunks.get(chunkPos.toLong());
+        final SubLevelHoldingChunk existingChunk = this.loadedHoldingChunks.get(chunkPos.pack());
         if (existingChunk != null) {
             existingChunk.markKeepLoaded();
             return;
@@ -131,7 +135,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
     }
 
     private void processUnload(final ChunkPos chunkPos, final Collection<ServerSubLevel> forceLoaded) {
-        if (!this.loadedHoldingChunks.containsKey(chunkPos.toLong())) {
+        if (!this.loadedHoldingChunks.containsKey(chunkPos.pack())) {
             return;
         }
 
@@ -199,7 +203,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
      */
     public void saveAll() {
         if (SableConfig.SUB_LEVEL_SAVING_LOG_MESSAGE.get()) {
-            Sable.LOGGER.info("Saving sub-levels for level '{}'/{}", this.level, this.level.dimension().location());
+            Sable.LOGGER.info("Saving sub-levels for level '{}'/{}", this.level, this.level.dimension().identifier());
         }
 
         if (this.verboseLogging) {
@@ -239,7 +243,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
                 }
                 this.moveAndSaveSubLevel(chainedSubLevel, moveToChunk, uuids);
 
-                final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(moveToChunk.toLong());
+                final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(moveToChunk.pack());
                 holdingChunk.markKeepLoaded();
             }
         }
@@ -264,7 +268,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
             }
 
             if (!holdingChunk.shouldKeepLoaded()) {
-                final ChunkHolder chunkHolder = this.level.getChunkSource().chunkMap.visibleChunkMap.get(holdingChunkPos.toLong());
+                final ChunkHolder chunkHolder = this.level.getChunkSource().chunkMap.visibleChunkMap.get(holdingChunkPos.pack());
 
                 if (chunkHolder == null || Visibility.fromFullChunkStatus(chunkHolder.getFullStatus()) == Visibility.HIDDEN) {
                     this.queuedUnloads.add(holdingChunkPos);
@@ -273,7 +277,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
         }
 
         for (final ChunkPos unload : this.queuedUnloads) {
-            final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(unload.toLong());
+            final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(unload.pack());
 
             if (this.verboseLogging) {
                 Sable.LOGGER.info("Processing queued unload for chunk {} at position {}", holdingChunk, holdingChunk != null ? holdingChunk.getChunkPos() : null);
@@ -302,7 +306,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
         }
 
         for (final ChunkPos unload : this.queuedUnloads) {
-            this.loadedHoldingChunks.remove(unload.toLong());
+            this.loadedHoldingChunks.remove(unload.pack());
         }
         this.queuedUnloads.clear();
 
@@ -441,7 +445,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
      */
     @Contract("_, true -> !null")
     private @Nullable SubLevelHoldingChunk getOrLoadHoldingChunk(final ChunkPos chunkPos, final boolean create) {
-        final long longKey = chunkPos.toLong();
+        final long longKey = chunkPos.pack();
         final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(longKey);
 
         if (holdingChunk != null) {
@@ -522,7 +526,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
             Sable.LOGGER.info("Setting chunk at {} as dirty", chunkPos);
         }
 
-        this.dirtyHoldingChunks.add(chunkPos.toLong());
+        this.dirtyHoldingChunks.add(chunkPos.pack());
     }
 
     /**

@@ -8,9 +8,11 @@ import net.minecraft.CrashReportCategory;
 import net.minecraft.ReportedException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,7 +34,14 @@ public abstract class EntityMixin {
     @Shadow
     protected abstract void onInsideBlock(BlockState blockState);
 
-    @Inject(method = "checkInsideBlocks", at = @At("TAIL"))
+    // PORT-NOTE(mc26.1): entityInside gained (InsideBlockEffectApplier, boolean isPrecise) params; reuse the
+    // entity's own StepBasedCollector, which vanilla flushes via applyAndClear right after checkInsideBlocks.
+    @Shadow
+    @Final
+    private InsideBlockEffectApplier.StepBasedCollector insideEffectCollector;
+
+    // PORT-NOTE(mc26.1): checkInsideBlocks() is now checkInsideBlocks(List<Entity.Movement>, StepBasedCollector).
+    @Inject(method = "checkInsideBlocks(Ljava/util/List;Lnet/minecraft/world/entity/InsideBlockEffectApplier$StepBasedCollector;)V", at = @At("TAIL"))
     protected void checkInsideBlocks(final CallbackInfo ci) {
         final AABB bounds = this.getBoundingBox();
 
@@ -57,7 +66,7 @@ public abstract class EntityMixin {
                             final BlockState blockState = this.level.getBlockState(mutableBlockPos);
 
                             try {
-                                blockState.entityInside(this.level, mutableBlockPos, (Entity) (Object) this);
+                                blockState.entityInside(this.level, mutableBlockPos, (Entity) (Object) this, this.insideEffectCollector, true);
                                 this.onInsideBlock(blockState);
                             } catch (final Throwable var12) {
                                 final CrashReport crashReport = CrashReport.forThrowable(var12, "Colliding entity with block");

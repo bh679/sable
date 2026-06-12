@@ -2,17 +2,22 @@ package dev.ryanhcode.sable.mixin.plot.lighting;
 
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.mixinterface.plot.SubLevelContainerHolder;
-import net.minecraft.client.renderer.chunk.RenderChunkRegion;
-import net.minecraft.world.level.Level;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.chunk.RenderSectionRegion;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(RenderChunkRegion.class)
+/**
+ * PORT-NOTE(mc26.1): RenderChunkRegion was replaced by RenderSectionRegion, whose level field is a
+ * private final ClientLevel instead of a protected Level.
+ */
+@Mixin(RenderSectionRegion.class)
 public class RenderChunkRegionMixin implements SubLevelContainerHolder {
 
-
-    @Shadow @Final protected Level level;
+    @Shadow
+    @Final
+    private ClientLevel level;
 
     @Override
     public SubLevelContainer sable$getPlotContainer() {

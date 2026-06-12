@@ -34,6 +34,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.ApiStatus;
@@ -156,11 +158,13 @@ public class ServerSubLevel extends SubLevel implements PhysicsPipelineBody {
      * @return packet sink for all players currently tracking this sub-level
      */
     public SablePacketSink playerSink() {
-        return packet -> {
+        return payloads -> {
             for (final UUID uuid : this.trackingPlayers) {
                 final ServerPlayer player = (ServerPlayer) this.getLevel().getPlayerByUUID(uuid);
                 if (player instanceof ServerPlayer) {
-                    player.connection.send(packet);
+                    for (final CustomPacketPayload payload : payloads) {
+                        player.connection.send(new ClientboundCustomPayloadPacket(payload));
+                    }
                 }
             }
         };

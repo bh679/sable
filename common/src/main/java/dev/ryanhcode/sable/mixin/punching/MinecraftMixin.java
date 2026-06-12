@@ -33,8 +33,9 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "startAttack", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/player/LocalPlayer;resetAttackStrengthTicker()V"))
     private void tryPaddling(final CallbackInfoReturnable<Boolean> cir) {
+        // PORT-NOTE(mc26.1): ItemCooldowns now keys on ItemStack.
         if (!this.player.getMainHandItem().is(SableTags.PADDLES) ||
-                this.player.getCooldowns().isOnCooldown(this.player.getMainHandItem().getItem())) {
+                this.player.getCooldowns().isOnCooldown(this.player.getMainHandItem())) {
             return;
         }
 

@@ -14,7 +14,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
@@ -23,6 +22,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -40,13 +40,21 @@ public class SubLevelTicketsSavedData extends SavedData {
     }
 
     public static SubLevelTicketsSavedData getOrLoad(final ServerLevel level) {
-        return level.getChunkSource().getDataStorage().computeIfAbsent(
-                new Factory<>(
+        // PORT-NOTE(mc26.1): SavedData.Factory was replaced by codec-based SavedDataType. The CompoundTag
+        // codec bridges to the legacy load/save NBT format. SavedDataType requires a non-null DataFixTypes;
+        // SAVED_DATA_COMMAND_STORAGE is the conventional inert choice for modded data (no fixers apply).
+        // File moves from data/sable_sub_level_force_load_tickets.dat to
+        // data/sable/sable_sub_level_force_load_tickets.dat (namespaced id).
+        return level.getDataStorage().computeIfAbsent(
+                new SavedDataType<>(
+                        Identifier.fromNamespaceAndPath("sable", SubLevelTicketsSavedData.FILE_ID),
                         () -> new SubLevelTicketsSavedData(level),
-                        (tag, provider) -> SubLevelTicketsSavedData.load(level, tag),
-                        DataFixTypes.LEVEL
-                ),
-                SubLevelTicketsSavedData.FILE_ID);
+                        CompoundTag.CODEC.xmap(
+                                tag -> SubLevelTicketsSavedData.load(level, tag),
+                                data -> data.save(new CompoundTag())
+                        ),
+                        DataFixTypes.SAVED_DATA_COMMAND_STORAGE
+                ));
     }
 
     private static SubLevelTicketsSavedData load(final ServerLevel level, final CompoundTag tag) {
@@ -88,7 +96,7 @@ public class SubLevelTicketsSavedData extends SavedData {
     }
 
     private static <T> SubLevelLoadingTicket<T> deserializeTicket(final UUID subLevelId, final CompoundTag tag) {
-        final Identifier typeName = Identifier.parse(tag.getString("type"));
+        final Identifier typeName = Identifier.parse(tag.getStringOr("type", ""));
         @SuppressWarnings("unchecked") final SubLevelLoadingTicketType<T> type = (SubLevelLoadingTicketType<T>) SubLevelLoadingTicketType.byName(typeName);
 
         if (type == null) {
@@ -123,8 +131,7 @@ public class SubLevelTicketsSavedData extends SavedData {
                 .orElse(null);
     }
 
-    @Override
-    public @NotNull CompoundTag save(final CompoundTag compoundTag, final HolderLookup.Provider provider) {
+    public @NotNull CompoundTag save(final CompoundTag compoundTag) {
         final ServerSubLevelContainer container = SubLevelContainer.getContainer(this.level);
         assert container != null : "Sub-level container is null";
 

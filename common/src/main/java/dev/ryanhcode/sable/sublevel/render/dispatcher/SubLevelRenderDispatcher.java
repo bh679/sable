@@ -1,20 +1,26 @@
 package dev.ryanhcode.sable.sublevel.render.dispatcher;
 
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.render.SubLevelRenderData;
 import dev.ryanhcode.sable.sublevel.render.SubLevelRenderer;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Camera;
+import net.minecraft.client.renderer.DynamicUniforms;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.ApiStatus;
-import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.lwjgl.system.NativeResource;
 
 import java.util.Collection;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
@@ -71,32 +77,36 @@ public interface SubLevelRenderDispatcher extends NativeResource, ResourceManage
     void updateCulling(final Iterable<ClientSubLevel> sublevels, final double cameraX, final double cameraY, final double cameraZ, final Frustum cullFrustum, boolean isSpectator);
 
     /**
-     * Renders all sub-levels into the specified section layer.
+     * Appends all sub-level section draws into vanilla's chunk draw groups.
      *
-     * @param sublevels    The sub-levels to render
-     * @param renderType   The render type being rendered
-     * @param cameraX      The x position of the camera
-     * @param cameraY      The y position of the camera
-     * @param cameraZ      The z position of the camera
-     * @param modelView    The modelview matrix
-     * @param projection   The projection matrix
-     * @param partialTicks The percentage from last tick to this tick
+     * <p>mc26.1: drawing rides {@code LevelRenderer#prepareChunkRenders} —
+     * each appended section carries its own model-view matrix, which encodes
+     * the plot's rotation and translation.
+     *
+     * @param sublevels        The sub-levels to render
+     * @param drawGroups       Vanilla's per-layer draw groups to append into
+     * @param sectionInfos     Vanilla's per-section uniform list to append into
+     * @param maxIndexCount    Single-element array holding the frame's running max index count
+     * @param vanillaModelView The frame's model-view matrix
+     * @param cameraX          The x position of the camera
+     * @param cameraY          The y position of the camera
+     * @param cameraZ          The z position of the camera
+     * @param atlasWidth       The block atlas width
+     * @param atlasHeight      The block atlas height
      */
-    void renderSectionLayer(final Iterable<ClientSubLevel> sublevels, final RenderType renderType, final double cameraX, final double cameraY, final double cameraZ, final Matrix4f modelView, final Matrix4f projection, final float partialTicks);
+    void appendChunkDraws(final Iterable<ClientSubLevel> sublevels,
+                          final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups,
+                          final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+                          final int[] maxIndexCount,
+                          final Matrix4fc vanillaModelView,
+                          final double cameraX, final double cameraY, final double cameraZ,
+                          final int atlasWidth, final int atlasHeight);
 
     /**
-     * Renders all sub-levels after the section layers have been rendered.
-     *
-     * @param sublevels    The sub-levels to render
-     * @param cameraX      The x position of the camera
-     * @param cameraY      The y position of the camera
-     * @param cameraZ      The z position of the camera
-     * @param modelView    The modelview matrix
-     * @param projection   The projection matrix
-     * @param partialTicks The percentage from last tick to this tick
+     * PORT-TODO(mc26.1): block entities on sub-levels are not rendered yet —
+     * the vanilla path moved to extract/submit (LevelRenderState +
+     * SubmitNodeCollector) and the old per-BE render hook no longer exists.
      */
-    void renderAfterSections(final Iterable<ClientSubLevel> sublevels, final double cameraX, double cameraY, double cameraZ, final Matrix4f modelView, final Matrix4f projection, final float partialTicks);
-
     void renderBlockEntities(final Iterable<ClientSubLevel> sublevels, final BlockEntityRenderer blockEntityRenderer, final double cameraX, double cameraY, double cameraZ, final float partialTick);
 
     void addDebugInfo(final Consumer<String> consumer);

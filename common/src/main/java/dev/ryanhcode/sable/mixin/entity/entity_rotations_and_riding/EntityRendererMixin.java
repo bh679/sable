@@ -17,19 +17,24 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(EntityRenderer.class)
 public class EntityRendererMixin {
 
-    @Redirect(method = "renderNameTag", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;cameraOrientation()Lorg/joml/Quaternionf;"))
+    // PORT-NOTE(mc26.1): EntityRenderer.renderNameTag and EntityRenderDispatcher.cameraOrientation() no
+    // longer exist — name tags are billboarded inside NameTagFeatureRenderer using
+    // CameraRenderState.orientation, with no Entity in reach. require = 0 keeps the game bootable;
+    // re-target when the render cluster is ported (likely needs a NameTagFeatureRenderer mixin plus an
+    // orientation field on the entity render state).
+    @Redirect(method = "renderNameTag", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;cameraOrientation()Lorg/joml/Quaternionf;"), require = 0)
     private Quaternionf sable$renderNameTag(final EntityRenderDispatcher instance, @Local(argsOnly = true) final Entity entity) {
         if (!EntitySubLevelUtil.shouldKick(entity)) {
-            return instance.cameraOrientation();
+            return instance.camera.rotation();
         }
 
-        final float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        final float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
         final Quaterniond orientation = EntitySubLevelRotationHelper.getEntityOrientation(entity, x -> ((ClientSubLevel) x).renderPose(), pt, EntitySubLevelRotationHelper.Type.ENTITY);
         if (orientation == null) {
-            return instance.cameraOrientation();
+            return instance.camera.rotation();
         }
 
-        return new Quaternionf(orientation).conjugate().mul(instance.cameraOrientation());
+        return new Quaternionf(orientation).conjugate().mul(instance.camera.rotation());
     }
 
 }

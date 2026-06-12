@@ -101,7 +101,8 @@ public abstract class PathNavigationMixin {
                     this.targetPos = path.getTarget();
                     this.reachRange = j;
                     this.resetStuckTimeout();
-                    ((PathExtension) path).sable$setLocalPath(this.level, true);
+                    // PORT-NOTE(mc26.1): Path is final now; cast through Object to reach the duck interface.
+                    ((PathExtension) (Object) path).sable$setLocalPath(this.level, true);
                 }
 
 

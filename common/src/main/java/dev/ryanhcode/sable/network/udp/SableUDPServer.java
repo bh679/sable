@@ -74,7 +74,10 @@ public class SableUDPServer {
         }
 
         if (player.connection.getRemoteAddress() instanceof LocalAddress) {
-            if (player.getServer().isSingleplayer() && player.getServer().isSingleplayerOwner(player.getGameProfile()))
+            // PORT-NOTE(mc26.1): Entity.getServer() removed (use level().getServer());
+            // isSingleplayerOwner now takes a NameAndId instead of a GameProfile.
+            final MinecraftServer playerServer = player.level().getServer();
+            if (playerServer != null && playerServer.isSingleplayer() && playerServer.isSingleplayerOwner(player.nameAndId()))
                 return true;
         }
 

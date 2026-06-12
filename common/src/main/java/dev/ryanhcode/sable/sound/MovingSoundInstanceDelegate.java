@@ -78,9 +78,10 @@ public class MovingSoundInstanceDelegate implements SoundInstance, TickableSound
         alSource3f(((ChannelAccessor) channel).getSource(), AL_VELOCITY, 0, 0, 0);
     }
 
+    // PORT-NOTE(mc26.1): SoundInstance.getLocation() was renamed getIdentifier().
     @Override
-    public @NotNull Identifier getLocation() {
-        return this.instance.getLocation();
+    public @NotNull Identifier getIdentifier() {
+        return this.instance.getIdentifier();
     }
 
     @Override

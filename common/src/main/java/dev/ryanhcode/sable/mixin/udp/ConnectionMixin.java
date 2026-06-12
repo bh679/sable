@@ -10,11 +10,14 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollDatagramChannel;
+import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.server.network.EventLoopGroupHolder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,20 +60,24 @@ public abstract class ConnectionMixin implements ConnectionExtension {
         return this.sable$udpChannel;
     }
 
+    // PORT-NOTE(mc26.1): Connection.connect now takes an EventLoopGroupHolder instead of a
+    // useEpoll boolean; the lazy worker-group constants were replaced by EventLoopGroupHolder
+    // (which also adds a KQueue native transport on macOS — datagram channel chosen to match).
     @Inject(method = "connect", at = @At("TAIL"))
-    private static void sable$connect(final InetSocketAddress inetSocketAddress, final boolean bl, final Connection connection, final CallbackInfoReturnable<ChannelFuture> cir) {
+    private static void sable$connect(final InetSocketAddress inetSocketAddress, final EventLoopGroupHolder eventLoopGroupHolder, final Connection connection, final CallbackInfoReturnable<ChannelFuture> cir) {
         final boolean useNativeTransport = SableClient.useNativeTransport();
 
         final Class<? extends Channel> channelClass;
-        final EventLoopGroup eventLoopGroup;
 
-        if (Epoll.isAvailable() && useNativeTransport) {
+        if (useNativeTransport && KQueue.isAvailable()) {
+            channelClass = KQueueDatagramChannel.class;
+        } else if (useNativeTransport && Epoll.isAvailable()) {
             channelClass = EpollDatagramChannel.class;
-            eventLoopGroup = Connection.NETWORK_EPOLL_WORKER_GROUP.get();
         } else {
             channelClass = NioDatagramChannel.class;
-            eventLoopGroup = Connection.NETWORK_WORKER_GROUP.get();
         }
+
+        final EventLoopGroup eventLoopGroup = EventLoopGroupHolder.remote(useNativeTransport).eventLoopGroup();
 
         Sable.LOGGER.info("Starting remote client UDP channel future");
 
@@ -92,7 +99,7 @@ public abstract class ConnectionMixin implements ConnectionExtension {
     private static void sable$connectToLocalServer(final SocketAddress socketAddress, final CallbackInfoReturnable<Connection> cir, @Local final Connection connection) {
         Sable.LOGGER.info("Starting local client UDP channel future");
 
-        final ChannelFuture channelFuture = new Bootstrap().group(Connection.LOCAL_WORKER_GROUP.get()).handler(new ChannelInitializer<>() {
+        final ChannelFuture channelFuture = new Bootstrap().group(EventLoopGroupHolder.local().eventLoopGroup()).handler(new ChannelInitializer<>() {
             @Override
             protected void initChannel(final Channel channel) {
                 SableUDPPacket.configureInMemoryPipeline(channel.pipeline(), PacketFlow.CLIENTBOUND);

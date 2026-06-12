@@ -4,8 +4,8 @@ import com.mojang.authlib.GameProfile;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.mixinterface.player_freezing.PlayerFreezeExtension;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,12 +17,14 @@ import java.util.UUID;
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin extends Player implements PlayerFreezeExtension {
 
-    public LocalPlayerMixin(final Level level, final BlockPos blockPos, final float f, final GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
+    public LocalPlayerMixin(final Level level, final GameProfile gameProfile) {
+        super(level, gameProfile);
     }
 
-    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;hasChunkAt(II)Z"))
-    private boolean sable$freezeTicking(final Level instance, final int x, final int z) {
+    // PORT-NOTE(mc26.1): LocalPlayer.tick no longer gates on Level.hasChunkAt — the tick gate is now
+    // ClientPacketListener.hasClientLoaded(); the freeze hook redirects that check instead.
+    @Redirect(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/ClientPacketListener;hasClientLoaded()Z"))
+    private boolean sable$freezeTicking(final ClientPacketListener instance) {
         this.sable$tickStopFreezing();
 
         final UUID uuid = this.sable$getFrozenToSubLevel();
@@ -40,6 +42,6 @@ public abstract class LocalPlayerMixin extends Player implements PlayerFreezeExt
             this.sable$freezeTo(null, null);
         }
 
-        return instance.hasChunkAt(x, z);
+        return instance.hasClientLoaded();
     }
 }

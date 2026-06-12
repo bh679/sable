@@ -37,8 +37,9 @@ import java.util.Locale;
 public class SableCommand {
 
     public static void register(final CommandDispatcher<CommandSourceStack> dispatcher, final CommandBuildContext buildContext) {
+        // PORT-NOTE(mc26.1): CommandSourceStack.hasPermission(int) was replaced by the PermissionCheck API.
         final LiteralArgumentBuilder<CommandSourceStack> sableBuilder = Commands.literal("sable")
-                .requires(commandSourceStack -> commandSourceStack.hasPermission(2));
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS));
 
         SablePhysicsCommands.register(sableBuilder, buildContext);
         SableSpawnCommands.register(sableBuilder, buildContext);
@@ -122,11 +123,13 @@ public class SableCommand {
                         source.sendSuccess(() -> {
                             final Vector3dc pos = pose.position();
                             final MutableComponent component = Component.translatable("commands.sable.info.name", Component.literal(subLevel.getName() != null ? subLevel.getName() : subLevel.getUniqueId().toString()));
-                            final Identifier dimension = subLevel.getLevel().dimension().location();
+                            // PORT-NOTE(mc26.1): ResourceKey.location() -> identifier(); ClickEvent/HoverEvent
+                            // are sealed interfaces with per-action records now.
+                            final Identifier dimension = subLevel.getLevel().dimension().identifier();
                             final GlobalSavedSubLevelPointer pointer = subLevel.getLastSerializationPointer();
                             final Component fileId = Component.translatable("commands.sable.info.name.tooltip", pointer != null ? pointer.toString() : "None yet");
-                            component.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, new Formatter().format(Locale.ROOT, "/execute in %s run tp @s %.2f %.2f %.2f", dimension, pos.x(), pos.y(), pos.z()).toString()))
-                                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, fileId))
+                            component.setStyle(Style.EMPTY.withClickEvent(new ClickEvent.SuggestCommand(new Formatter().format(Locale.ROOT, "/execute in %s run tp @s %.2f %.2f %.2f", dimension, pos.x(), pos.y(), pos.z()).toString()))
+                                    .withHoverEvent(new HoverEvent.ShowText(fileId))
                                     .withColor(ChatFormatting.GRAY));
                             return component;
                         }, false);

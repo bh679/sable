@@ -13,6 +13,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
 import org.joml.Vector3d;
 
 import java.util.UUID;
@@ -51,8 +52,10 @@ public record ServerboundGizmoMoveSubLevelPacket(UUID subLevel, Vector3d positio
 
         final ServerSubLevelContainer container = SubLevelContainer.getContainer(level);
 
-        if (!context.player().hasPermissions(1)) {
-            Sable.LOGGER.warn("Player {} tried to move a sub-level with gizmo without permission", context.player().getGameProfile().getName());
+        // PORT-NOTE(mc26.1): hasPermissions(1) became the PermissionSet API (level 1 = MODERATORS);
+        // GameProfile.getName() is now name().
+        if (!context.player().permissions().hasPermission(Permissions.COMMANDS_MODERATOR)) {
+            Sable.LOGGER.warn("Player {} tried to move a sub-level with gizmo without permission", context.player().getGameProfile().name());
             return;
         }
 

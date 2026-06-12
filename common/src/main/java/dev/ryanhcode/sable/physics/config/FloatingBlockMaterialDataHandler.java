@@ -1,11 +1,8 @@
 package dev.ryanhcode.sable.physics.config;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.JsonOps;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.physics.floating_block.FloatingBlockMaterial;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -25,37 +22,23 @@ public class FloatingBlockMaterialDataHandler {
         allMaterials.clear();
     }
 
-    public static class ReloadListener extends SimpleJsonResourceReloadListener {
+    // PORT-NOTE(mc26.1): SimpleJsonResourceReloadListener is now codec-based and generic; the base class
+    // performs the JSON decode (and logs failures) that apply() used to do by hand.
+    public static class ReloadListener extends SimpleJsonResourceReloadListener<FloatingBlockMaterial> {
         public static final String NAME = "floating_block_material";
         public static final Identifier ID = Sable.sablePath(NAME);
-
-        private static final Gson GSON = new Gson();
 
         public static final ReloadListener INSTANCE = new ReloadListener();
 
         protected ReloadListener() {
-            super(ReloadListener.GSON, "floating_materials");
+            super(FloatingBlockMaterial.CODEC, FileToIdConverter.json("floating_materials"));
         }
 
         @Override
-        protected void apply(final Map<Identifier, JsonElement> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
+        protected void apply(final Map<Identifier, FloatingBlockMaterial> map, final ResourceManager resourceManager, final ProfilerFiller profiler) {
             FloatingBlockMaterialDataHandler.allMaterials.clear();
-            for (final Map.Entry<Identifier, JsonElement> entry : map.entrySet()) {
-                final JsonElement element = entry.getValue();
-                try {
-                    final DataResult<FloatingBlockMaterial> dataResult = FloatingBlockMaterial.CODEC.parse(JsonOps.INSTANCE, element);
-
-                    if (dataResult.error().isPresent()) {
-                        Sable.LOGGER.error(String.valueOf(dataResult.error().get()));
-                    } else {
-                        final Identifier loc = entry.getKey();
-                        final FloatingBlockMaterial floatingBlockMaterial = dataResult.result().orElseThrow();
-
-                        FloatingBlockMaterialDataHandler.addMaterial(loc, floatingBlockMaterial);
-                    }
-                } catch (final Exception ignored) {
-
-                }
+            for (final Map.Entry<Identifier, FloatingBlockMaterial> entry : map.entrySet()) {
+                FloatingBlockMaterialDataHandler.addMaterial(entry.getKey(), entry.getValue());
             }
         }
     }

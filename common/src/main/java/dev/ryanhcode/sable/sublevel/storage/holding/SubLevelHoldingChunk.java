@@ -161,7 +161,7 @@ public class SubLevelHoldingChunk {
     public static SubLevelHoldingChunk from(final ChunkPos pos, final CompoundTag tag) {
         final SubLevelHoldingChunk chunk = new SubLevelHoldingChunk(pos);
 
-        final int[] pointer = tag.getIntArray("pointers");
+        final int[] pointer = tag.getIntArray("pointers").orElseGet(() -> new int[0]);
         chunk.pointers.addAll(Arrays.stream(pointer).mapToObj(SavedSubLevelPointer::unpack).toList());
 
         return chunk;

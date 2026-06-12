@@ -15,9 +15,10 @@ import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
 import dev.ryanhcode.sable.util.SableNBTUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,9 @@ public class SubLevelSerializer {
         final ListTag dependencyTags = new ListTag();
 
         for (final UUID dependency : dependencies) {
-            dependencyTags.add(NbtUtils.createUUID(dependency));
+            // PORT-NOTE(mc26.1): NbtUtils.createUUID/loadUUID were removed; UUIDUtil.CODEC writes the
+            // same IntArrayTag format.
+            dependencyTags.add(UUIDUtil.CODEC.encodeStart(NbtOps.INSTANCE, dependency).getOrThrow());
         }
 
         final Pose3d serializedPose = new Pose3d(subLevel.logicalPose());
@@ -104,7 +107,7 @@ public class SubLevelSerializer {
             dependencies = new ObjectArrayList<>();
 
             for (final Tag dependencyUUIDTag : dependencyUUIDS) {
-                final UUID dependencyUUID = NbtUtils.loadUUID(dependencyUUIDTag);
+                final UUID dependencyUUID = UUIDUtil.CODEC.parse(NbtOps.INSTANCE, dependencyUUIDTag).getOrThrow();
 
                 dependencies.add(dependencyUUID);
             }
@@ -129,8 +132,8 @@ public class SubLevelSerializer {
         final CompoundTag tag = halfLoadedSubLevel.fullTag();
         final CompoundTag plotTag = tag.getCompoundOrEmpty("plot");
 
-        final int plotX = plotTag.getInt("plot_x");
-        final int plotZ = plotTag.getInt("plot_z");
+        final int plotX = plotTag.getIntOr("plot_x", 0);
+        final int plotZ = plotTag.getIntOr("plot_z", 0);
 
         final Pose3d pose = SableNBTUtils.readPose3d(tag.getCompoundOrEmpty("pose"));
 
@@ -187,7 +190,7 @@ public class SubLevelSerializer {
         physicsSystem.getPipeline().addLinearAndAngularVelocity(subLevel, linearVelocity, angularVelocity);
 
         if (tag.contains("display_name")) {
-            subLevel.setName(tag.getString("display_name"));
+            subLevel.setName(tag.getStringOr("display_name", ""));
         }
 
         if (tag.contains("user_data")) {

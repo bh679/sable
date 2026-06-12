@@ -43,7 +43,7 @@ public class SableNBTUtils {
     }
 
     public static Quaterniond readQuaternion(final CompoundTag tag) {
-        return new Quaterniond(tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z"), tag.getDouble("w"));
+        return new Quaterniond(tag.getDoubleOr("x", 0.0), tag.getDoubleOr("y", 0.0), tag.getDoubleOr("z", 0.0), tag.getDoubleOr("w", 0.0));
     }
 
     public static CompoundTag writeVector3d(final Vector3dc vector) {
@@ -57,7 +57,7 @@ public class SableNBTUtils {
     }
 
     public static Vector3d readVector3d(final CompoundTag tag) {
-        return new Vector3d(tag.getDouble("x"), tag.getDouble("y"), tag.getDouble("z"));
+        return new Vector3d(tag.getDoubleOr("x", 0.0), tag.getDoubleOr("y", 0.0), tag.getDoubleOr("z", 0.0));
     }
 
     public static CompoundTag writeBoundingBox(final BoundingBox3dc bounds) {
@@ -75,12 +75,12 @@ public class SableNBTUtils {
 
     public static BoundingBox3d readBoundingBox(final CompoundTag tag) {
         return new BoundingBox3d(
-                tag.getDouble("minX"),
-                tag.getDouble("minY"),
-                tag.getDouble("minZ"),
-                tag.getDouble("maxX"),
-                tag.getDouble("maxY"),
-                tag.getDouble("maxZ")
+                tag.getDoubleOr("minX", 0.0),
+                tag.getDoubleOr("minY", 0.0),
+                tag.getDoubleOr("minZ", 0.0),
+                tag.getDoubleOr("maxX", 0.0),
+                tag.getDoubleOr("maxY", 0.0),
+                tag.getDoubleOr("maxZ", 0.0)
         );
     }
 }

@@ -125,9 +125,10 @@ public class PlotChunkHolder extends ChunkHolder {
         }
     }
 
+    // PORT-NOTE(mc26.1): ChunkHolder.blockChanged now returns boolean (whether broadcasting just became needed).
     @Override
-    public void blockChanged(final BlockPos blockPos) {
-        super.blockChanged(blockPos);
+    public boolean blockChanged(final BlockPos blockPos) {
+        return super.blockChanged(blockPos);
     }
 
     /**

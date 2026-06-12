@@ -10,11 +10,14 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollDatagramChannel;
+import io.netty.channel.kqueue.KQueue;
+import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.EventLoopGroupHolder;
 import net.minecraft.server.network.ServerConnectionListener;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -51,16 +54,21 @@ public class ServerConnectionListenerMixin implements ServerConnectionListenerEx
         }
 
         synchronized (this.channels) {
+            // PORT-NOTE(mc26.1): MinecraftServer.isEpollEnabled() became useNativeTransport(), and the
+            // SERVER_(EPOLL_)EVENT_GROUP lazy constants were replaced by EventLoopGroupHolder (which also
+            // adds a KQueue native transport on macOS — datagram channel chosen to match).
+            final boolean useNativeTransport = this.server.useNativeTransport();
             final Class<? extends Channel> channelClass;
-            final EventLoopGroup eventLoopGroup;
 
-            if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
+            if (useNativeTransport && KQueue.isAvailable()) {
+                channelClass = KQueueDatagramChannel.class;
+            } else if (useNativeTransport && Epoll.isAvailable()) {
                 channelClass = EpollDatagramChannel.class;
-                eventLoopGroup = ServerConnectionListener.SERVER_EPOLL_EVENT_GROUP.get();
             } else {
                 channelClass = NioDatagramChannel.class;
-                eventLoopGroup = ServerConnectionListener.SERVER_EVENT_GROUP.get();
             }
+
+            final EventLoopGroup eventLoopGroup = EventLoopGroupHolder.remote(useNativeTransport).eventLoopGroup();
 
             Sable.LOGGER.info("Adding UDP server channel future");
 
@@ -100,7 +108,7 @@ public class ServerConnectionListenerMixin implements ServerConnectionListenerEx
                             ServerConnectionListenerMixin.this.sable$setupChannel(channel);
                         }
                     })
-                    .group(ServerConnectionListener.SERVER_EVENT_GROUP.get())
+                    .group(EventLoopGroupHolder.local().eventLoopGroup())
                     .localAddress(LocalAddress.ANY)
                     .bind()
                     .syncUninterruptibly());

@@ -146,7 +146,7 @@ public class SableSpawnCommands {
     private static int spawnJenga(final CommandContext<CommandSourceStack> ctx, @Nullable final String name) throws CommandSyntaxException {
         final CommandSourceStack source = ctx.getSource();
         final SubLevelContainer container = SableCommandHelper.requireSubLevelContainer(ctx);
-        final Vec3 pos = Vec3.atCenterOf(BlockPos.containing(source.position()));
+        final Vec3 pos = Vec3.atCenterOf(BlockPos.containing(source.getPosition()));
         final int height = IntegerArgumentType.getInteger(ctx, "height");
 
         for (int yOffset = 0; yOffset < height; yOffset++) {
@@ -159,7 +159,7 @@ public class SableSpawnCommands {
                 position.set(pos.x, pos.y, pos.z);
 
                 if (index != 0) {
-                    position.add(JOMLConversion.atLowerCornerOf(Direction.get(index == 1 ? Direction.AxisDirection.POSITIVE : Direction.AxisDirection.NEGATIVE, axis).getNormal()));
+                    position.add(JOMLConversion.atLowerCornerOf(Direction.get(index == 1 ? Direction.AxisDirection.POSITIVE : Direction.AxisDirection.NEGATIVE, axis).getUnitVec3i()));
                 }
                 position.add(0.0, yOffset, 0.0);
                 final Vector3d positionBackup = new Vector3d(position);
@@ -226,7 +226,7 @@ public class SableSpawnCommands {
 
         final SubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        Vec3 playerPos = source.position();
+        Vec3 playerPos = source.getPosition();
         playerPos = Vec3.atCenterOf(BlockPos.containing(playerPos));
 
         final Pose3d pose = new Pose3d();
@@ -277,7 +277,7 @@ public class SableSpawnCommands {
 
         final SubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 spawnPos = source.position();
+        final Vec3 spawnPos = source.getPosition();
 
         final Pose3d pose = new Pose3d();
         pose.position().set(spawnPos.x, spawnPos.y, spawnPos.z);
@@ -316,7 +316,7 @@ public class SableSpawnCommands {
         final ServerSubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
         final SubLevelPhysicsSystem system = SableCommandHelper.requireSubLevelPhysicsSystem(plotContainer);
 
-        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.position()));
+        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.getPosition()));
         final Collection<Vector3d> points = new ObjectArrayList<>();
 
         for (int i = 0; i < 10; i++) {
@@ -337,7 +337,7 @@ public class SableSpawnCommands {
 
         final ServerSubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.position()));
+        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.getPosition()));
 
         final Pose3d pose1 = new Pose3d();
         pose1.position().set(playerPos.x, playerPos.y, playerPos.z);
@@ -360,8 +360,8 @@ public class SableSpawnCommands {
         final RotaryConstraintConfiguration config = new RotaryConstraintConfiguration(
                 JOMLConversion.atBottomCenterOf(plotA.getCenterBlock().above().above()),
                 JOMLConversion.atBottomCenterOf(plotB.getCenterBlock()),
-                JOMLConversion.atLowerCornerOf(Direction.UP.getNormal()),
-                JOMLConversion.atLowerCornerOf(Direction.UP.getNormal())
+                JOMLConversion.atLowerCornerOf(Direction.UP.getUnitVec3i()),
+                JOMLConversion.atLowerCornerOf(Direction.UP.getUnitVec3i())
         );
 //        final FreeConstraintConfiguration config = new FreeConstraintConfiguration();
 
@@ -378,7 +378,7 @@ public class SableSpawnCommands {
 
         final ServerSubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.position()));
+        final Vec3 playerPos = Vec3.atCenterOf(BlockPos.containing(source.getPosition()));
 
         final int gridSize = 9;
         final double yawRange = Math.toRadians(90.0);
@@ -424,7 +424,7 @@ public class SableSpawnCommands {
 
         final SubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 playerPos = source.position();
+        final Vec3 playerPos = source.getPosition();
 
         final int sideLength = IntegerArgumentType.getInteger(ctx, "sideLength");
 
@@ -462,7 +462,7 @@ public class SableSpawnCommands {
 
         final SubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 playerPos = source.position();
+        final Vec3 playerPos = source.getPosition();
 
         final Pose3d pose = new Pose3d();
         pose.position().set(playerPos.x, playerPos.y, playerPos.z);
@@ -486,7 +486,7 @@ public class SableSpawnCommands {
 
         final SubLevelContainer plotContainer = SableCommandHelper.requireSubLevelContainer(ctx);
 
-        final Vec3 playerPos = source.position();
+        final Vec3 playerPos = source.getPosition();
 
         final Pose3d pose = new Pose3d();
         pose.position().set(playerPos.x, playerPos.y, playerPos.z);

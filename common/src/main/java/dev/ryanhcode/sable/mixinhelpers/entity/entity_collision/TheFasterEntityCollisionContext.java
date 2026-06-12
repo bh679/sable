@@ -15,7 +15,9 @@ public class TheFasterEntityCollisionContext extends EntityCollisionContext {
     private final Entity entity;
 
     public TheFasterEntityCollisionContext(final Entity entity) {
-        super(false, 0.0, ItemStack.EMPTY, atack -> false, entity);
+        // PORT-NOTE(mc26.1): EntityCollisionContext ctor is now (descending, placement, entityBottom,
+        // heldItem, alwaysCollideWithFluid, entity); the canStandOnFluid predicate became an override below.
+        super(false, false, 0.0, ItemStack.EMPTY, false, entity);
         this.entity = entity;
     }
 

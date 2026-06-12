@@ -11,7 +11,7 @@ import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -112,7 +112,7 @@ public class SubLevelEntityShadowRenderer {
             )) {
                 final BlockState blockState = level.getBlockState(subLevelBlockPos);
 
-                if (blockState.getRenderShape() == RenderShape.INVISIBLE || level.getMaxLocalRawBrightness(entity.blockPosition()) <= 3) {
+                if (blockState.getRenderShape() == RenderShape.INVISIBLE || level.getRawBrightness(entity.blockPosition(), 0) /* PORT-NOTE(mc26.1): was getMaxLocalRawBrightness */ <= 3) {
                     continue;
                 }
 
@@ -125,7 +125,7 @@ public class SubLevelEntityShadowRenderer {
                     continue;
                 }
 
-                final float light = LightTexture.getBrightness(level.dimensionType(), level.getMaxLocalRawBrightness(entity.blockPosition()));
+                final float light = net.minecraft.client.renderer.Lightmap.getBrightness(level.dimensionType(), level.getRawBrightness(entity.blockPosition(), 0) /* PORT-NOTE(mc26.1): was getMaxLocalRawBrightness */);
 
                 // render the shadows for the faces of this voxelshape
                 final BoundingBox3d shapeBounds = BOUNDS.set(voxelShape.bounds()).move(subLevelBlockPos.getX(), subLevelBlockPos.getY(), subLevelBlockPos.getZ(), BOUNDS);
@@ -143,7 +143,7 @@ public class SubLevelEntityShadowRenderer {
                         continue;
                     }
 
-                    if (renderPose.transformNormal(JOMLConversion.atLowerCornerOf(direction.getNormal(), NORMAL)).dot(upDir) < 0.6) {
+                    if (renderPose.transformNormal(JOMLConversion.atLowerCornerOf(direction.getUnitVec3i(), NORMAL)).dot(upDir) < 0.6) {
                         continue;
                     }
 
@@ -209,6 +209,6 @@ public class SubLevelEntityShadowRenderer {
 
     private static void shadowVertex(final PoseStack.Pose pose, final VertexConsumer vertexConsumer, final int i, final float f, final float g, final float h, final float j, final float k) {
         final Vector3f vector3f = pose.pose().transformPosition(f, g, h, RENDER_POSITION);
-        vertexConsumer.addVertex(vector3f.x(), vector3f.y(), vector3f.z(), i, j, k, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
+        vertexConsumer.addVertex(vector3f.x(), vector3f.y(), vector3f.z(), i, j, k, OverlayTexture.NO_OVERLAY, LightCoordsUtil.FULL_BRIGHT, 0.0F, 1.0F, 0.0F);
     }
 }

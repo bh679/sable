@@ -115,9 +115,7 @@ public class SableStorageCommands {
                                             for (final SavedSubLevelPointer pointer : holdingChunk.getSubLevelPointers()) {
                                                 final SubLevelData data = storage.attemptLoadSubLevel(chunkPos, pointer);
 
-                                                final String name = data.fullTag().contains("display_name")
-                                                        ? data.fullTag().getString("display_name")
-                                                        : data.uuid().toString();
+                                                final String name = data.fullTag().getStringOr("display_name", data.uuid().toString());
                                                 if (name != null && name.equals(nameArgument)) {
                                                     logFoundSubLevel(pointer, data, chunkPos, source, level);
                                                 }
@@ -135,9 +133,7 @@ public class SableStorageCommands {
     private static void logFoundSubLevel(final SavedSubLevelPointer pointer, final SubLevelData data, final ChunkPos chunkPos, final CommandSourceStack source, final ServerLevel level) {
         if (data == null) return;
 
-        final String name = data.fullTag().contains("display_name")
-                ? data.fullTag().getString("display_name")
-                : data.uuid().toString();
+        final String name = data.fullTag().getStringOr("display_name", data.uuid().toString());
         final GlobalSavedSubLevelPointer globalPointer = new GlobalSavedSubLevelPointer(chunkPos, pointer.storageIndex(), pointer.subLevelIndex());
 
         final Pose3d pose = data.pose();
@@ -145,10 +141,12 @@ public class SableStorageCommands {
         source.sendSuccess(() -> {
             final Vector3dc pos =  pose.position();
             final MutableComponent component = Component.translatable("commands.sable.info.name", Component.literal(name));
-            final Identifier dimension = level.dimension().location();
+            // PORT-NOTE(mc26.1): ResourceKey.location() -> identifier(); ClickEvent/HoverEvent are sealed
+            // interfaces with per-action records now.
+            final Identifier dimension = level.dimension().identifier();
             final Component fileId = Component.translatable("commands.sable.info.name.tooltip", globalPointer.toString());
-            component.setStyle(Style.EMPTY.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, new Formatter().format(Locale.ROOT, "/execute in %s run tp @s %.2f %.2f %.2f", dimension, pos.x(), pos.y(), pos.z()).toString()))
-                    .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, fileId))
+            component.setStyle(Style.EMPTY.withClickEvent(new ClickEvent.SuggestCommand(new Formatter().format(Locale.ROOT, "/execute in %s run tp @s %.2f %.2f %.2f", dimension, pos.x(), pos.y(), pos.z()).toString()))
+                    .withHoverEvent(new HoverEvent.ShowText(fileId))
                     .withColor(ChatFormatting.GRAY));
             return component;
         }, false);

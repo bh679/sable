@@ -9,7 +9,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
-import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
+import net.minecraft.world.entity.projectile.hurtingprojectile.AbstractHurtingProjectile;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaterniondc;
@@ -71,7 +71,8 @@ public class EntitySubLevelUtil {
             anchor = new Vec3(0.0, entity.getBbHeight() / 2.0, 0.0);
         }
 
-        entity.moveTo(subLevel.logicalPose().transformPosition(pos.add(anchor)).subtract(anchor));
+        // PORT-NOTE(mc26.1): Entity.moveTo was renamed snapTo.
+        entity.snapTo(subLevel.logicalPose().transformPosition(pos.add(anchor)).subtract(anchor));
         entity.setDeltaMovement(subLevel.logicalPose().transformNormal(entity.getDeltaMovement()).add(subLevelGainedVelo.x, subLevelGainedVelo.y, subLevelGainedVelo.z));
         entity.lookAt(EntityAnchorArgument.Anchor.FEET, subLevel.logicalPose().transformNormal(entity.getLookAngle()).add(entity.position()));
 
@@ -85,7 +86,8 @@ public class EntitySubLevelUtil {
     }
 
     public static boolean shouldKick(final Entity entity) {
-        return !entity.getType().is(SableTags.RETAIN_IN_SUB_LEVEL);
+        // PORT-NOTE(mc26.1): EntityType.is(TagKey) is gone; tag checks go through Entity.typeHolder().
+        return !entity.typeHolder().is(SableTags.RETAIN_IN_SUB_LEVEL);
     }
 
     @Nullable

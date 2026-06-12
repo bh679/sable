@@ -9,7 +9,6 @@ import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
-import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -29,8 +28,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(LocalPlayer.class)
 public abstract class LocalPlayerMixin extends Player {
 
-    public LocalPlayerMixin(final Level level, final BlockPos blockPos, final float f, final GameProfile gameProfile) {
-        super(level, blockPos, f, gameProfile);
+    public LocalPlayerMixin(final Level level, final GameProfile gameProfile) {
+        super(level, gameProfile);
     }
 
     @Redirect(method = "aiStep", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;add(DDD)Lnet/minecraft/world/phys/Vec3;", ordinal =  0))
@@ -55,8 +54,9 @@ public abstract class LocalPlayerMixin extends Player {
         return new Vec3(k * l, -m, j * l);
     }
 
-    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z", at = @At("RETURN"))
-    private void sable$onStartRiding(final Entity entity, final boolean bl, final CallbackInfoReturnable<Boolean> cir) {
+    // PORT-NOTE(mc26.1): startRiding gained a sendEventAndTriggers boolean.
+    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z", at = @At("RETURN"))
+    private void sable$onStartRiding(final Entity entity, final boolean bl, final boolean sendEventAndTriggers, final CallbackInfoReturnable<Boolean> cir) {
         if (!cir.getReturnValue() || !EntitySubLevelUtil.shouldKick(this)) {
             return;
         }

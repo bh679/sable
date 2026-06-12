@@ -1,11 +1,12 @@
 package dev.ryanhcode.sable.sublevel.storage;
 
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.BitSet;
 
@@ -21,20 +22,27 @@ public class SubLevelOccupancySavedData extends SavedData {
     }
 
     public static SubLevelOccupancySavedData getOrLoad(final ServerLevel level) {
-        return level.getChunkSource().getDataStorage().computeIfAbsent(
-                new Factory<>(
+        // PORT-NOTE(mc26.1): SavedData.Factory was replaced by codec-based SavedDataType. The CompoundTag
+        // codec bridges to the legacy load/save NBT format. SavedDataType requires a non-null DataFixTypes;
+        // SAVED_DATA_COMMAND_STORAGE is the conventional inert choice for modded data (no fixers apply).
+        // File moves from data/sable_sub_level_occupancy.dat to data/sable/sable_sub_level_occupancy.dat (namespaced id).
+        return level.getDataStorage().computeIfAbsent(
+                new SavedDataType<>(
+                        Identifier.fromNamespaceAndPath("sable", SubLevelOccupancySavedData.FILE_ID),
                         () -> new SubLevelOccupancySavedData(level),
-                        (tag, provider) -> SubLevelOccupancySavedData.load(level, tag),
-                        DataFixTypes.LEVEL
-                ),
-                SubLevelOccupancySavedData.FILE_ID);
+                        CompoundTag.CODEC.xmap(
+                                tag -> SubLevelOccupancySavedData.load(level, tag),
+                                data -> data.save(new CompoundTag())
+                        ),
+                        DataFixTypes.SAVED_DATA_COMMAND_STORAGE
+                ));
     }
 
 
     private static SubLevelOccupancySavedData load(final ServerLevel level, final CompoundTag tag) {
         final SubLevelOccupancySavedData data = new SubLevelOccupancySavedData(level);
 
-        final long[] longArray = tag.getLongArray("sub_level_occupancy");
+        final long[] longArray = tag.getLongArray("sub_level_occupancy").orElseGet(() -> new long[0]);
 
         if (longArray.length > 0) {
             final BitSet occupancyData = BitSet.valueOf(longArray);
@@ -50,8 +58,7 @@ public class SubLevelOccupancySavedData extends SavedData {
         return data;
     }
 
-    @Override
-    public CompoundTag save(final CompoundTag compoundTag, final HolderLookup.Provider provider) {
+    public CompoundTag save(final CompoundTag compoundTag) {
         final SubLevelContainer container = SubLevelContainer.getContainer(this.level);
         assert container != null : "Sub-level container is null";
 

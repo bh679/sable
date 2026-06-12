@@ -189,7 +189,7 @@ public class SubLevelEntityCollision {
             }
             entityBoundsOBB.setOrientation(sink.entityBoxOrientation);
 
-            entityBoundsCenter.add(collisionMotion, entityBoundsOBB.position());
+            entityBoundsCenter.add(collisionMotion, entityBoundsOBB.getPosition());
 
             // iterate through all sub-levels that COULD intersect
             for (final SubLevel subLevel : intersecting) {
@@ -240,7 +240,7 @@ public class SubLevelEntityCollision {
                     final Vector3dc feetOffset = entityUp.mul(verticalAnchorPosition - entity.getBoundingBox().getYsize() / 2.0, sink.posMinusCenter);
                     sink.trackingPosition.set(entityBoundsCenter).add(feetOffset);
                     subLevelPose.transformPosition(lastSubLevelPose.transformPositionInverse(sink.trackingPosition)).sub(feetOffset, entityBoundsCenter);
-                    entityBoundsCenter.add(collisionMotion, entityBoundsOBB.position());
+                    entityBoundsCenter.add(collisionMotion, entityBoundsOBB.getPosition());
                     entityBoundsCenter.fma(verticalAnchorPosition - entity.getBoundingBox().getYsize() / 2.0, entityUp, sink.tempEyePosition).sub(0.0, verticalAnchorPosition, 0.0);
                     ((EntityExtension) entity).sable$setPosSuperRaw(new Vec3(sink.tempEyePosition.x, sink.tempEyePosition.y, sink.tempEyePosition.z));
 
@@ -278,10 +278,10 @@ public class SubLevelEntityCollision {
                         while (iterator.hasNext()) {
                             final BoundingBox3dc box = iterator.next();
                             box.center(center);
-                            cubeOBB.position().set(block.getX() + center.x,
+                            cubeOBB.getPosition().set(block.getX() + center.x,
                                     block.getY() + center.y,
                                     block.getZ() + center.z);
-                            subLevelPose.transformPosition(cubeOBB.position());
+                            subLevelPose.transformPosition(cubeOBB.getPosition());
                             box.size(cubeOBB.getDimensions());
 
                             OrientedBoundingBox3d.sat(entityBoundsOBB, cubeOBB, mtv);
@@ -433,7 +433,7 @@ public class SubLevelEntityCollision {
                         }
 
                         collisionMotion.add(maxMTV);
-                        entityBoundsCenter.add(collisionMotion, entityBoundsOBB.position());
+                        entityBoundsCenter.add(collisionMotion, entityBoundsOBB.getPosition());
                     }
                 }
             }
@@ -576,10 +576,10 @@ public class SubLevelEntityCollision {
             while (iterator.hasNext()) {
                 final BoundingBox3dc box = iterator.next();
                 box.center(center);
-                cubeOBB.position().set(block.getX() + center.x,
+                cubeOBB.getPosition().set(block.getX() + center.x,
                         block.getY() + center.y,
                         block.getZ() + center.z);
-                subLevelPose.transformPosition(cubeOBB.position());
+                subLevelPose.transformPosition(cubeOBB.getPosition());
                 box.size(cubeOBB.getDimensions());
 
                 OrientedBoundingBox3d.sat(entityBoundsOBB, cubeOBB, mtv);

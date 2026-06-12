@@ -21,7 +21,7 @@ public interface BlockEntitySubLevelPropellerActor extends BlockEntitySubLevelAc
         final BlockEntityPropeller prop = this.getPropeller();
 
         if (prop.isActive()) {
-            final Vec3 thrustDirection = Vec3.atLowerCornerOf(prop.getBlockDirection().getNormal());
+            final Vec3 thrustDirection = Vec3.atLowerCornerOf(prop.getBlockDirection().getUnitVec3i());
             this.applyForces(subLevel, thrustDirection, timeStep);
         }
     }

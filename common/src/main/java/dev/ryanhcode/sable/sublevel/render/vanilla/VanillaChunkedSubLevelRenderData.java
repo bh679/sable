@@ -1,45 +1,47 @@
 package dev.ryanhcode.sable.sublevel.render.vanilla;
 
-import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.VertexBuffer;
-import dev.ryanhcode.sable.Sable;
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.vertex.VertexFormat;
 import dev.ryanhcode.sable.companion.math.BoundingBox3i;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.companion.math.JOMLConversion;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
-import dev.ryanhcode.sable.compatibility.SableIrisCompat;
-import dev.ryanhcode.sable.mixin.sublevel_render.RenderSectionAccessor;
 import dev.ryanhcode.sable.mixinterface.sublevel_render.vanilla.RenderSectionExtension;
 import dev.ryanhcode.sable.sublevel.ClientSubLevel;
 import dev.ryanhcode.sable.sublevel.render.SubLevelRenderData;
-import dev.ryanhcode.sable.sublevel.water_occlusion.WaterOcclusionContainer;
-import dev.ryanhcode.sable.sublevel.water_occlusion.WaterOcclusionRegion;
-import foundry.veil.api.compat.IrisCompat;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PrioritizeChunkUpdates;
-import net.minecraft.client.renderer.rendertype.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.DynamicUniforms;
+import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.chunk.CompiledSectionMesh;
 import net.minecraft.client.renderer.chunk.RenderRegionCache;
+import net.minecraft.client.renderer.chunk.SectionMesh;
 import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.Mth;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.joml.*;
 
 import java.util.Collection;
-import java.util.Set;
+import java.util.EnumMap;
+import java.util.List;
 
 /**
  * A renderer and view area for a {@link dev.ryanhcode.sable.sublevel.SubLevel}.
+ *
+ * <p>mc26.1 port: drawing no longer happens here directly. Plot sections are
+ * appended into vanilla's {@code ChunkSectionsToRender} draw groups inside
+ * {@code LevelRenderer#prepareChunkRenders} (see the impl.vanilla
+ * LevelRendererMixin) — each section carries its own model-view matrix, which
+ * is how the plot's rotation/translation is applied.
  */
 public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
-
-    private static final Matrix4f TRANSFORM = new Matrix4f();
-    private static final Matrix4f MODEL_MATRIX = new Matrix4f();
 
     private final Vector3d origin = new Vector3d();
     /**
@@ -84,14 +86,6 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
 
     /**
      * Gets a section in global section coordinates
-     *
-     * @param sections the section array
-     * @param size     the dimensions of the section grid
-     * @param origin   the origin of the section grid
-     * @param x        the global x coordinate
-     * @param y        the global y coordinate
-     * @param z        the global z coordinate
-     * @return the section if it exists
      */
     private static SectionRenderDispatcher.RenderSection getSection(final SectionRenderDispatcher.RenderSection[] sections, final Vector3i size, final Vector3i origin, final int x, final int y, final int z) {
         final int relX = (x - origin.x());
@@ -160,7 +154,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
                         if (oldRenderSections != null && oldSection != null) {
                             newSection = oldSection;
                         } else {
-                            newSection = this.sectionRenderDispatcher.new RenderSection(-1, x << 4, y << 4, z << 4);
+                            newSection = this.sectionRenderDispatcher.new RenderSection(-1, SectionPos.asLong(x, y, z));
                             ((RenderSectionExtension) newSection).sable$addDirtyListener(this.dirtyRenderSections::add);
                         }
 
@@ -177,14 +171,12 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
             if (oldRenderSections != null) {
                 for (final SectionRenderDispatcher.RenderSection oldSection : oldRenderSectionsList) {
                     // if not in bounds
-                    final SectionPos oldSectionPos = SectionPos.of(oldSection.getOrigin());
+                    final SectionPos oldSectionPos = SectionPos.of(oldSection.getRenderOrigin());
                     if (oldSectionPos.getX() < minChunkPos.x() || oldSectionPos.getX() > maxChunkPos.x() ||
                             oldSectionPos.getY() < minChunkPos.y() || oldSectionPos.getY() > maxChunkPos.y() ||
                             oldSectionPos.getZ() < minChunkPos.z() || oldSectionPos.getZ() > maxChunkPos.z()) {
 
-                        oldSection.releaseBuffers();
-                        oldSection.updateGlobalBlockEntities(Set.of());
-                        oldSection.setCompiled(SectionRenderDispatcher.CompiledSection.EMPTY);
+                        oldSection.reset();
                     }
                 }
             }
@@ -195,7 +187,6 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
     public void rebuild() {
         for (final SectionRenderDispatcher.RenderSection renderSection : this.allRenderSections) {
             renderSection.setDirty(true);
-            ((RenderSectionAccessor) renderSection).getGlobalBlockEntities().clear();
         }
     }
 
@@ -206,7 +197,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
         }
 
         final ProfilerFiller profiler = net.minecraft.util.profiling.Profiler.get();
-        final Vector3d cameraPos = JOMLConversion.atCenterOf(camera.getBlockPosition()).sub(8, 8, 8);
+        final Vector3d cameraPos = JOMLConversion.atCenterOf(camera.blockPosition()).sub(8, 8, 8);
         this.subLevel.logicalPose().transformPositionInverse(cameraPos);
 
         for (final SectionRenderDispatcher.RenderSection renderSection : this.dirtyRenderSections) {
@@ -214,7 +205,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
 
             boolean buildSync = false;
             if (chunkUpdates == PrioritizeChunkUpdates.NEARBY) {
-                final BlockPos origin = renderSection.getOrigin();
+                final BlockPos origin = renderSection.getRenderOrigin();
                 buildSync = cameraPos.distanceSquared(origin.getX(), origin.getY(), origin.getZ()) < 768.0 || renderSection.isDirtyFromPlayer();
             } else if (chunkUpdates == PrioritizeChunkUpdates.PLAYER_AFFECTED) {
                 buildSync = renderSection.isDirtyFromPlayer();
@@ -226,7 +217,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
                 profiler.pop();
             } else {
                 profiler.push("sublevel_schedule_async_compile");
-                renderSection.rebuildSectionAsync(this.sectionRenderDispatcher, renderRegionCache);
+                renderSection.rebuildSectionAsync(renderRegionCache);
                 profiler.pop();
             }
 
@@ -257,7 +248,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
         }
 
         final int index = this.getIndex(x, y, z);
-        return index >= 0 && index < this.renderSections.length && this.renderSections[index].compiled.get() != SectionRenderDispatcher.CompiledSection.UNCOMPILED;
+        return index >= 0 && index < this.renderSections.length && this.renderSections[index].getSectionMesh() != CompiledSectionMesh.UNCOMPILED;
     }
 
     @Override
@@ -283,89 +274,119 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
         return this.allRenderSections;
     }
 
-    public void renderChunkedSubLevel(final RenderType layer, final ShaderInstance shader, final Matrix4f modelView, final double camX, final double camY, final double camZ) {
+    /**
+     * Appends this sub-level's section draws into vanilla's draw groups built
+     * by {@code LevelRenderer#prepareChunkRenders}.
+     *
+     * <p>Math (terrain.vsh: {@code pos = Position + (ChunkPosition - CameraBlockPos) + CameraOffset},
+     * {@code CameraOffset = floor(cam) - cam}): we pass
+     * {@code ChunkPosition = sectionOriginPlotLocal + F} with the int fog
+     * fudge {@code F = floor(renderPos)}, so {@code pos = u + F - cam} where
+     * {@code u} is the plot-local position. The per-section matrix then maps
+     * that exactly onto the rotated camera-relative position:
+     * {@code M = V · translate(renderPos - cam) · rotate(q) · translate(cam - F)}.
+     * Fog distances see {@code u + F - cam} ≈ unrotated camera-relative
+     * position — same approximation Sable used pre-port.
+     */
+    public void appendChunkDraws(final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<com.mojang.blaze3d.buffers.GpuBufferSlice[]>>>> drawGroups,
+                                 final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+                                 final int[] maxIndexCount,
+                                 final Matrix4fc vanillaModelView,
+                                 final double camX, final double camY, final double camZ,
+                                 final int atlasWidth, final int atlasHeight) {
+        if (this.renderSections == null || this.allRenderSections.isEmpty()) {
+            return;
+        }
+
         final Pose3dc renderPose = this.subLevel.renderPose();
         final Vector3d renderPos = new Vector3d(renderPose.position());
         final Quaterniondc renderRot = renderPose.orientation();
         final Vector3d renderCOR = renderRot.transform(new Vector3d(renderPose.rotationPoint()).sub(this.origin));
-
-        float[] oldFogColor = null;
-
-        if (shader.FOG_COLOR != null) {
-            final WaterOcclusionContainer<?> container = WaterOcclusionContainer.getContainer(this.subLevel.getLevel());
-
-            final Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-            final WaterOcclusionRegion occludingRegion = container.getOccludingRegion(camera.position());
-
-            // TODO: Redo to swap to main fog instead of just getting rid of it
-            if (occludingRegion != null && Sable.HELPER.getContaining(this.subLevel.getLevel(), occludingRegion.getVolume().getMinBlockPos()) == this.subLevel) {
-                oldFogColor = RenderSystem.getShaderFogColor();
-                shader.FOG_COLOR.set(0.0f, 0.0f, 0.0f, 0.0f);
-                shader.FOG_COLOR.upload();
-            }
-        }
-
-        final Uniform sableSkyLightScale = shader.getUniform("SableSkyLightScale");
-        if (sableSkyLightScale != null) {
-            final int skyLight = this.subLevel.getLatestSkyLightScale();
-            sableSkyLightScale.set(skyLight / 15.0f);
-            sableSkyLightScale.upload();
-        }
-
         renderPos.sub(renderCOR);
 
-        final Matrix4f transform = TRANSFORM.identity();
+        // Int fog fudge: keeps shader-side positions near camera-relative magnitudes.
+        final int fx = Mth.floor(renderPos.x());
+        final int fy = Mth.floor(renderPos.y());
+        final int fz = Mth.floor(renderPos.z());
 
-        // convert the camera pos to local to the origin / rotated
-        final Vector3d fogOffset = new Vector3d(camX, camY, camZ).sub(renderPos).mul(-1.0);
+        // M = vanillaMV · translate(renderPos − cam) · rotate(q) · translate(cam − F)
+        final Matrix4f sectionMatrix = new Matrix4f(vanillaModelView);
+        sectionMatrix.translate((float) (renderPos.x() - camX), (float) (renderPos.y() - camY), (float) (renderPos.z() - camZ));
+        sectionMatrix.rotate(new Quaternionf(renderRot));
+        sectionMatrix.translate((float) (camX - fx), (float) (camY - fy), (float) (camZ - fz));
 
-        transform.translate((float) (renderPos.x() - camX - fogOffset.x), (float) (renderPos.y() - camY - fogOffset.y), (float) (renderPos.z() - camZ - fogOffset.z));
-        transform.rotate(new Quaternionf(renderRot));
-
-        if (shader.MODEL_VIEW_MATRIX != null) {
-            shader.MODEL_VIEW_MATRIX.set(modelView.mul(transform, MODEL_MATRIX));
-            shader.MODEL_VIEW_MATRIX.upload();
-
-            if (IrisCompat.isLoaded()) {
-                SableIrisCompat.refreshModelMatrices(shader);
-            }
-        }
-
-        // TODO: sorting
-        final Uniform chunkOffsetUniform = shader.CHUNK_OFFSET;
+        final long now = net.minecraft.util.Util.getMillis();
+        int uboIndex = -1;
 
         for (final SectionRenderDispatcher.RenderSection renderSection : this.allRenderSections) {
-            if (renderSection.getCompiled().isEmpty(layer)) {
-                continue;
+            final SectionMesh sectionMesh = renderSection.getSectionMesh();
+            final BlockPos sectionOrigin = renderSection.getRenderOrigin();
+            int sectionUboIndex = -1;
+
+            for (final ChunkSectionLayer layer : ChunkSectionLayer.values()) {
+                final SectionMesh.SectionDraw draw = sectionMesh.getSectionDraw(layer);
+                final SectionRenderDispatcher.RenderSectionBufferSlice slice = this.sectionRenderDispatcher.getRenderSectionSlice(sectionMesh, layer);
+                if (slice == null || draw == null || (draw.hasCustomIndexBuffer() && slice.indexBuffer() == null)) {
+                    continue;
+                }
+
+                if (sectionUboIndex == -1) {
+                    sectionUboIndex = sectionInfos.size();
+                    sectionInfos.add(new DynamicUniforms.ChunkSectionInfo(
+                            new Matrix4f(sectionMatrix),
+                            (int) (sectionOrigin.getX() - this.origin.x()) + fx,
+                            (int) (sectionOrigin.getY() - this.origin.y()) + fy,
+                            (int) (sectionOrigin.getZ() - this.origin.z()) + fz,
+                            renderSection.getVisibility(now),
+                            atlasWidth,
+                            atlasHeight
+                    ));
+                }
+
+                final VertexFormat vertexFormat = layer.pipeline().getVertexFormat();
+                final GpuBuffer vertexBuffer = slice.vertexBuffer();
+
+                int firstIndex = 0;
+                final GpuBuffer indexBuffer;
+                final VertexFormat.IndexType indexType;
+                if (!draw.hasCustomIndexBuffer()) {
+                    if (draw.indexCount() > maxIndexCount[0]) {
+                        maxIndexCount[0] = draw.indexCount();
+                    }
+
+                    indexBuffer = null;
+                    indexType = null;
+                } else {
+                    indexBuffer = slice.indexBuffer();
+                    indexType = draw.indexType();
+                    firstIndex = (int) (slice.indexBufferOffset() / indexType.bytes);
+                }
+
+                // Unique-ish group hash per sub-level section batch — plot
+                // sections never share UBO entries with vanilla terrain.
+                final int combinedHash = 31 * (31 * 7919 + System.identityHashCode(vertexBuffer)) + sectionUboIndex;
+
+                final int finalUboIndex = sectionUboIndex;
+                final int baseVertex = (int) (slice.vertexBufferOffset() / vertexFormat.getVertexSize());
+                final List<RenderPass.Draw<com.mojang.blaze3d.buffers.GpuBufferSlice[]>> draws = drawGroups.get(layer).computeIfAbsent(combinedHash, k -> new java.util.ArrayList<>());
+                draws.add(new RenderPass.Draw<>(
+                        0,
+                        vertexBuffer,
+                        indexBuffer,
+                        indexType,
+                        firstIndex,
+                        draw.indexCount(),
+                        baseVertex,
+                        (sectionUbos, uploader) -> uploader.upload("ChunkSection", sectionUbos[finalUboIndex])
+                ));
             }
-
-            if (chunkOffsetUniform != null) {
-                final BlockPos pos = renderSection.getOrigin();
-                final Vector3d fogOffsetRot = renderRot.transformInverse(fogOffset, new Vector3d());
-                chunkOffsetUniform.set((float) (pos.getX() - this.origin.x() + fogOffsetRot.x), (float) (pos.getY() - this.origin.y() + fogOffsetRot.y), (float) (pos.getZ() - this.origin.z() + fogOffsetRot.z));
-                chunkOffsetUniform.upload();
-            }
-
-            final VertexBuffer buffer = renderSection.getBuffer(layer);
-            buffer.bind();
-            buffer.draw();
-        }
-
-        if (chunkOffsetUniform != null) {
-            chunkOffsetUniform.set(0f, 0f, 0f);
-        }
-
-        if (oldFogColor != null) {
-            shader.FOG_COLOR.set(oldFogColor[0], oldFogColor[1], oldFogColor[2], oldFogColor[3]);
         }
     }
 
     @Override
     public void close() {
         for (final SectionRenderDispatcher.RenderSection section : this.allRenderSections) {
-            section.releaseBuffers();
-            section.updateGlobalBlockEntities(Set.of());
-            section.setCompiled(SectionRenderDispatcher.CompiledSection.EMPTY);
+            section.reset();
         }
         this.allRenderSections.clear();
         this.renderSections = null;

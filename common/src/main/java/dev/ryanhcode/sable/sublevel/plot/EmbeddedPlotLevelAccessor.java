@@ -1,7 +1,6 @@
 package dev.ryanhcode.sable.sublevel.plot;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.particles.ParticleOptions;
@@ -11,6 +10,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.attribute.EnvironmentAttributeReader;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.flag.FeatureFlagSet;
@@ -80,9 +80,11 @@ public class EmbeddedPlotLevelAccessor implements CommonLevelAccessor, ServerLev
         this.centerChunk = plot.getCenterChunk();
     }
 
+    // PORT-NOTE(mc26.1): getShade moved off LevelReader (client-only BlockAndTintGetter now);
+    // LevelReader instead requires environmentAttributes().
     @Override
-    public float getShade(final Direction direction, final boolean bl) {
-        return this.level.getShade(direction, bl);
+    public EnvironmentAttributeReader environmentAttributes() {
+        return this.level.environmentAttributes();
     }
 
     @Override
@@ -152,7 +154,8 @@ public class EmbeddedPlotLevelAccessor implements CommonLevelAccessor, ServerLev
 
     @Override
     public DifficultyInstance getCurrentDifficultyAt(final BlockPos blockPos) {
-        return this.level.getCurrentDifficultyAt(blockPos.offset(this.center));
+        // PORT-NOTE(mc26.1): getCurrentDifficultyAt moved from Level to ServerLevel.
+        return this.getLevel().getCurrentDifficultyAt(blockPos.offset(this.center));
     }
 
     @Override
@@ -175,9 +178,10 @@ public class EmbeddedPlotLevelAccessor implements CommonLevelAccessor, ServerLev
         return this.level.getRandom();
     }
 
+    // PORT-NOTE(mc26.1): LevelAccessor.playSound/levelEvent now take a @Nullable Entity instead of Player.
     @Override
-    public void playSound(@Nullable final Player player, final BlockPos blockPos, final SoundEvent soundEvent, final SoundSource soundSource, final float f, final float g) {
-        this.level.playSound(player, blockPos.offset(this.center), soundEvent, soundSource, f, g);
+    public void playSound(@Nullable final Entity entity, final BlockPos blockPos, final SoundEvent soundEvent, final SoundSource soundSource, final float f, final float g) {
+        this.level.playSound(entity, blockPos.offset(this.center), soundEvent, soundSource, f, g);
     }
 
     @Override
@@ -186,8 +190,8 @@ public class EmbeddedPlotLevelAccessor implements CommonLevelAccessor, ServerLev
     }
 
     @Override
-    public void levelEvent(@Nullable final Player player, final int i, final BlockPos blockPos, final int j) {
-        this.level.levelEvent(player, i, blockPos.offset(this.center), j);
+    public void levelEvent(@Nullable final Entity entity, final int i, final BlockPos blockPos, final int j) {
+        this.level.levelEvent(entity, i, blockPos.offset(this.center), j);
     }
 
     @Override

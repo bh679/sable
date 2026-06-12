@@ -60,7 +60,7 @@ public class SubLevelSelector {
                 ServerSubLevel closestSubLevel = null;
 
                 for (final ServerSubLevel body : bodies) {
-                    final Vec3 sourcePosition = helper.projectOutOfSubLevel(source.getLevel(), source.position());
+                    final Vec3 sourcePosition = helper.projectOutOfSubLevel(source.getLevel(), source.getPosition());
                     final double distance = body.logicalPose().position().distance(sourcePosition.x, sourcePosition.y, sourcePosition.z);
 
                     if (distance < closest) {
@@ -73,10 +73,11 @@ public class SubLevelSelector {
             }
             case RANDOM -> {
                 final List<ServerSubLevel> list = new ArrayList<>(bodies);
-                yield Collections.singleton(list.get(level.random.nextInt(list.size())));
+                // PORT-NOTE(mc26.1): Level.random is protected now; use getRandom().
+                yield Collections.singleton(list.get(level.getRandom().nextInt(list.size())));
             }
             case INSIDE -> {
-                final ServerSubLevel subLevel = (ServerSubLevel) helper.getContaining(level, source.position());
+                final ServerSubLevel subLevel = (ServerSubLevel) helper.getContaining(level, source.getPosition());
                 if (subLevel != null) {
                     yield Collections.singleton(subLevel);
                 } else {
@@ -125,7 +126,7 @@ public class SubLevelSelector {
 
         List<ServerSubLevel> modifiedSubLevels = new ObjectArrayList<>(collectedSubLevels);
 
-        final Vector3d position = new Vector3d(source.position().x, source.position().y, source.position().z);
+        final Vector3d position = new Vector3d(source.getPosition().x, source.getPosition().y, source.getPosition().z);
         this.modifiers.sort(
                 Comparator.comparingInt(a -> a.first().getFilterPriority().ordinal())
         );

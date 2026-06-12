@@ -23,15 +23,17 @@ public interface SableUDPPacket {
 
     }
 
+    // PORT-NOTE(mc26.1): NoOpFrameEncoder/NoOpFrameDecoder/MonitorFrameDecoder were renamed
+    // LocalFrameEncoder/LocalFrameDecoder/MonitoredLocalFrameDecoder.
     private static ChannelOutboundHandler createFrameEncoder(final boolean memoryOnly) {
-        return memoryOnly ? new NoOpFrameEncoder() : new Varint21LengthFieldPrepender();
+        return memoryOnly ? new LocalFrameEncoder() : new Varint21LengthFieldPrepender();
     }
 
     private static ChannelInboundHandler createFrameDecoder(@Nullable final BandwidthDebugMonitor debugMonitor, final boolean memoryOnly) {
         if (!memoryOnly) {
             return new Varint21FrameDecoder(debugMonitor);
         } else {
-            return debugMonitor != null ? new MonitorFrameDecoder(debugMonitor) : new NoOpFrameDecoder();
+            return debugMonitor != null ? new MonitoredLocalFrameDecoder(debugMonitor) : new LocalFrameDecoder();
         }
     }
 
