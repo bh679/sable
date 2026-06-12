@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ChunkBorderRenderer.class)
 public class ChunkBorderRendererMixin {
 
-    @Inject(at = @At("HEAD"), method = "render", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "render", cancellable = true, require = 0) // PORT-TODO(mc26.1): chunk borders render via Gizmos now
     public void render(final PoseStack poseStack, final MultiBufferSource bufferSource, final double camX, final double camY, final double camZ, final CallbackInfo ci) {
         if (SableClientConfig.DEBUG_DRAW_LOADED_CHUNKS.getAsBoolean()) {
             ci.cancel();

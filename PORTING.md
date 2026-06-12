@@ -29,8 +29,9 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 - [x] De-Veil: render features deleted (fancy path, dynamic shading, sky-light shadows, water occlusion, ImGui gizmo/inspector, sodium reach-around)
 - [x] De-Veil: registries (`SableRegistrationProvider` shim), mixin plugin (`SableLoaderPlatform.isModLoaded`)
 - [x] Mechanical 26.1 renames (Identifier, ChunkPos record, NBT Optional API, isClientSide(), height accessors, Profiler.get(), RenderType/BlockAndTintGetter moves)
-- [ ] **Common module compiles** ← current (remaining: chunk-render data + render mixins on the 26.1 pipeline, per-site stragglers)
-- [ ] NeoForge module compiles
+- [x] **Common module compiles** (1212 → 0 over 9 passes; render cluster rebuilt on prepareChunkRenders/SectionMesh, plot core + long tail ported)
+- [x] NeoForge module compiles; `sable-neoforge-26.1.2-1.3.0-dt.1.jar` assembles (game tests excluded pending 26.1 test-framework port)
+- [ ] **runClient boots** ← current (mixin-application fixes; see "Runtime verification list" below)
 - [ ] Rust natives build via fork CI (`.github/workflows`, MC-version-agnostic)
 - [ ] runClient boots; plot assembles and moves
 - [ ] Save/quit clean (fix upstream #679 — PlotChunkHolder shutdown leak — properly here)

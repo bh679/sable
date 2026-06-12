@@ -53,8 +53,15 @@ public abstract class EntityMixin {
     @Shadow
     public abstract Vec3 position();
 
-    @Shadow
-    protected abstract ListTag newDoubleList(double... ds);
+    @org.spongepowered.asm.mixin.Unique
+    private ListTag sable$newDoubleList(final double... values) {
+        // mc26.1: Entity#newDoubleList was removed with the ValueOutput rework.
+        final ListTag tag = new ListTag();
+        for (final double value : values) {
+            tag.add(net.minecraft.nbt.DoubleTag.valueOf(value));
+        }
+        return tag;
+    }
 
     @Shadow
     public abstract double getX();
@@ -137,7 +144,7 @@ public abstract class EntityMixin {
 
         final SubLevel subLevel = Sable.HELPER.getContaining(this.vehicle);
         if (subLevel != null) {
-            final Tag newPositionTag = this.newDoubleList(
+            final Tag newPositionTag = this.sable$newDoubleList(
                     this.getX(),
                     this.getY(),
                     this.getZ()

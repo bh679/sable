@@ -31,14 +31,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class LivingEntityMixin extends Entity implements LivingEntityStickExtension {
 
 
+    // mc26.1: vanilla lerp fields were replaced by the InterpolationHandler.
     @Shadow
-    protected int lerpSteps;
-    @Shadow
-    protected double lerpYRot;
-    @Shadow
-    protected double lerpXRot;
+    @org.spongepowered.asm.mixin.Final
+    protected net.minecraft.world.entity.InterpolationHandler interpolation;
 
     @Shadow protected abstract void updateWalkAnimation(float f);
+
+    @Unique
+    private double sable$lerpYRot;
+    @Unique
+    private double sable$lerpXRot;
 
     @Unique
     private Vec3 sable$lerpTarget = Vec3.ZERO;
@@ -56,10 +59,13 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntitySt
 
     @Override
     public void sable$setupLerp() {
-        // Prevent vanilla lerp from happening
-        if (this.sable$getPlotPosition() != null && this.lerpSteps > 0) {
-            this.sable$sableRotLerpSteps = this.lerpSteps;
-            this.lerpSteps = 0;
+        // Prevent vanilla lerp from happening (mc26.1: cancel the
+        // InterpolationHandler after capturing its rotation targets)
+        if (this.sable$getPlotPosition() != null && this.interpolation.hasActiveInterpolation()) {
+            this.sable$lerpYRot = this.interpolation.yRot();
+            this.sable$lerpXRot = this.interpolation.xRot();
+            this.sable$sableRotLerpSteps = net.minecraft.world.entity.InterpolationHandler.DEFAULT_INTERPOLATION_STEPS;
+            this.interpolation.cancel();
         }
     }
 
@@ -77,9 +83,9 @@ public abstract class LivingEntityMixin extends Entity implements LivingEntitySt
             --this.sable$sableLerpSteps;
         }
         if (this.sable$sableRotLerpSteps > 0) {
-            final double difference = Mth.wrapDegrees(this.lerpYRot - (double) this.getYRot());
+            final double difference = Mth.wrapDegrees(this.sable$lerpYRot - (double) this.getYRot());
             this.setYRot(this.getYRot() + (float) difference / (float) this.sable$sableRotLerpSteps);
-            this.setXRot(this.getXRot() + (float) (this.lerpXRot - (double) this.getXRot()) / (float) this.sable$sableRotLerpSteps);
+            this.setXRot(this.getXRot() + (float) (this.sable$lerpXRot - (double) this.getXRot()) / (float) this.sable$sableRotLerpSteps);
             --this.sable$sableRotLerpSteps;
             this.setRot(this.getYRot(), this.getXRot());
         }

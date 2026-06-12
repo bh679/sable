@@ -2,7 +2,6 @@ package dev.ryanhcode.sable.neoforge.mixin.camera_rotation;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.sugar.Local;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
 import dev.ryanhcode.sable.mixinhelpers.camera.camera_rotation.EntitySubLevelRotationHelper;
@@ -12,7 +11,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.ViewportEvent;
 import org.joml.Quaterniond;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -21,7 +19,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Camera.class)
@@ -60,13 +57,6 @@ public abstract class CameraMixin {
     @Shadow
     private Entity entity;
 
-    @Shadow protected abstract void setRotation(float f, float g, float roll);
-
-    @Redirect(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setRotation(FFF)V", ordinal = 1))
-    private void sable$redirectSetRotation(final Camera camera, final float f, final float g, final float roll, @Local final ViewportEvent.ComputeCameraAngles event) {
-        this.setRotation(event.getYaw() + 180.0f, -event.getPitch(), roll);
-    }
-
     @WrapMethod(method = "setPosition(Lnet/minecraft/world/phys/Vec3;)V")
     private void sable$setPosition(final Vec3 arg, final Operation<Void> original) {
         if (this.entity == null) {
@@ -86,8 +76,9 @@ public abstract class CameraMixin {
         original.call(pos);
     }
 
-    @Inject(method = "setRotation(FFF)V", at = @At(value = "INVOKE", target = "Lorg/joml/Quaternionf;rotationYXZ(FFF)Lorg/joml/Quaternionf;", shift = At.Shift.AFTER))
-    public void sable$rotateView(final float f, final float g, final float roll, final CallbackInfo ci) {
+    // mc26.1: NeoForge's 3-arg roll setRotation patch is gone — vanilla 2-arg method
+    @Inject(method = "setRotation(FF)V", at = @At(value = "INVOKE", target = "Lorg/joml/Quaternionf;rotationYXZ(FFF)Lorg/joml/Quaternionf;", shift = At.Shift.AFTER), require = 0)
+    public void sable$rotateView(final float f, final float g, final CallbackInfo ci) {
         final float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
         final Quaterniond ridingOrientation = EntitySubLevelRotationHelper.getEntityOrientation(this.entity, (x) -> ((ClientSubLevel) x).renderPose(), pt, EntitySubLevelRotationHelper.Type.CAMERA);
 

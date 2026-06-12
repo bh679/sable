@@ -17,12 +17,12 @@ public class ClientboundTeleportEntityPacketMixin implements PacketActuallyInSub
     @Unique
     private boolean sable$actuallyInSubLevel;
 
-    @Inject(method = "<init>(Lnet/minecraft/network/FriendlyByteBuf;)V", at = @At("RETURN"))
+    @Inject(method = "<init>(Lnet/minecraft/network/FriendlyByteBuf;)V", at = @At("RETURN"), require = 0) // PORT-TODO(mc26.1): packet is codec-based now
     private void sable$readActuallyInSubLevel(final FriendlyByteBuf friendlyByteBuf, final CallbackInfo ci) {
         this.sable$setActuallyInSubLevel(friendlyByteBuf.readBoolean());
     }
 
-    @Inject(method = "write", at = @At("TAIL"))
+    @Inject(method = "write", at = @At("TAIL"), require = 0) // PORT-TODO(mc26.1): packet is codec-based now
     private void sable$writeActuallyInSubLevel(final FriendlyByteBuf friendlyByteBuf, final CallbackInfo ci) {
         friendlyByteBuf.writeBoolean(this.sable$actuallyInSubLevel);
     }

@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(EntityRenderDispatcher.class)
 public abstract class EntityRenderDispatcherMixin {
 
-    @Inject(method = "renderShadow", at = @At("TAIL"))
+    @Inject(method = "renderShadow", at = @At("TAIL"), require = 0) // PORT-TODO(mc26.1): shadow rendering moved to render states
     private static void sable$renderShadowsOnSubLevels(final PoseStack poseStack,
                                                        final MultiBufferSource multiBufferSource,
                                                        final Entity entity,

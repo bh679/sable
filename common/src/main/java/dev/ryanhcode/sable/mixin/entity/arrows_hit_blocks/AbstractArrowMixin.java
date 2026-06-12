@@ -31,7 +31,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class AbstractArrowMixin extends Entity {
 
     @Shadow
-    protected boolean inGround;
+    public abstract boolean isInGround();
 
     public AbstractArrowMixin(final EntityType<?> entityType, final Level level) {
         super(entityType, level);
@@ -53,7 +53,7 @@ public abstract class AbstractArrowMixin extends Entity {
         final Vec3 localPosition = subLevel.logicalPose().transformPositionInverse(this.position());
         final Vec3 diff = blockHitResult.getLocation().subtract(localPosition);
 
-        if (!this.level().isClientSide() && !this.inGround) {
+        if (!this.level().isClientSide() && !this.isInGround()) {
             final Vec3 localImpulse = subLevel.logicalPose().transformNormalInverse(this.getDeltaMovement());
             RigidBodyHandle.of((ServerSubLevel) subLevel).applyImpulseAtPoint(localPosition, localImpulse);
         }

@@ -33,10 +33,10 @@ public abstract class EntityMixin implements EntityStickExtension {
     public abstract void setPos(Vec3 vec3);
 
     @Shadow
-    public abstract void moveTo(Vec3 vec3);
+    public abstract void snapTo(Vec3 vec3);
 
     @Shadow
-    public abstract void moveTo(double d, double e, double f);
+    public abstract void snapTo(double d, double e, double f);
 
     @Unique
     private Vec3 sable$plotPosition = null;
@@ -88,7 +88,7 @@ public abstract class EntityMixin implements EntityStickExtension {
         final SubLevel packetSubLevel = Sable.HELPER.getContaining(this.level, packetX, packetZ);
         if (packetSubLevel != null) {
             final Vector3d globalPacketPos = packetSubLevel.logicalPose().transformPosition(new Vector3d(packetX, packetY, packetZ));
-            this.moveTo(globalPacketPos.x, globalPacketPos.y, globalPacketPos.z);
+            this.snapTo(globalPacketPos.x, globalPacketPos.y, globalPacketPos.z);
         }
     }
 }

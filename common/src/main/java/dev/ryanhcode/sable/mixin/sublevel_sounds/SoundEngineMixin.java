@@ -50,7 +50,7 @@ public class SoundEngineMixin {
         return instance;
     }
 
-    @Inject(method = "tickNonPaused", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V", shift = At.Shift.AFTER, ordinal = 0), locals = LocalCapture.CAPTURE_FAILEXCEPTION)
+    @Inject(method = "tickInGameSound", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/sounds/ChannelAccess$ChannelHandle;execute(Ljava/util/function/Consumer;)V", shift = At.Shift.AFTER, ordinal = 0), locals = LocalCapture.CAPTURE_FAILEXCEPTION)
     private void sable$tick(final CallbackInfo ci, final Iterator<TickableSoundInstance> sounds, final TickableSoundInstance sound,
                             final float volume, final float pitch, final Vec3 pos, final ChannelAccess.ChannelHandle access) {
         if (sound instanceof final MovingSoundInstanceDelegate delegated) {

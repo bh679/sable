@@ -30,7 +30,7 @@ public class CameraMixin {
     @Unique
     private final Vector3d sable$endPos = new Vector3d();
 
-    @WrapOperation(method = "setup", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"))
+    @WrapOperation(method = "update", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Camera;setPosition(DDD)V"), require = 0) // PORT-NOTE(mc26.1): setup->update; soft in case the overload shifted
     private void sable$setPosition(final Camera instance,
                                    final double x,
                                    final double y,
