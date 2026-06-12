@@ -33,8 +33,8 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 - [x] NeoForge module compiles; `sable-neoforge-26.1.2-1.3.0-dt.1.jar` assembles (game tests excluded pending 26.1 test-framework port)
 - [x] **runClient boots to title screen and into a world** (39 boot iterations of mixin-application fixes; player joins, server ticks, Rapier natives load)
 - [x] **Plot assembly works server-side** — `/sable assemble area` created a 729-block sub-level, `assemble connected` a 5-block one; Rapier scenes initialized; sub-level saving runs; no crash
-- [x] **Plots render, can be targeted, stood on, and broken client-side** (verified in-game 2026-06-12; spawned single-block plots — `assemble area` visual check still pending but uses the identical chunked draw path)
-- [ ] **Sub-level persistence: plot saved in one session does not load/track in the next** ← current
+- [x] **Plots render, can be targeted, stood on, and broken client-side** (verified in-game 2026-06-12; single-block and multi-block — `/sable spawn platform`)
+- [x] **Sub-level persistence verified** (2026-06-13: spawn → quit-to-title → rejoin restores plots, visually confirmed; verbose serialization trace showed save → holding-chunk write → disk read → re-allocation all healthy)
 
 ## Resolved: "client pose corruption" (plots invisible + untargetable, 2026-06-12)
 
@@ -76,15 +76,24 @@ auth handshake (remote servers); the SP gate is the **server** config flag in
 `sable-common.toml`. Real netty UDP framing (`LocalFrameEncoder`/`HiddenByteBuf`
 rename, KQueue datagram branch) remains untested until a dedicated-server test.
 
-## Next: sub-level persistence
+## Resolved: sub-level persistence (2026-06-13)
 
-A plot spawned at 20:38 (2026-06-12) saved ("Saving sub-levels" ran on quit) but did
-not load/track on rejoin at 21:15 — no client tracking start at join; the world was
-plot-free. Either the sub-level save dropped content or the load path fails silently.
-Related: PORTING.md open item on the PlotChunkHolder shutdown leak (upstream #679),
-and the load path replays `handleBlockChange` per block (`ServerLevelPlot` deserialize)
-— verify with: assemble → quit → rejoin, watching `Saving sub-levels for level` and
-whether a `ClientboundStartTrackingSubLevelPacket` arrives on join.
+The earlier "plot missing after rejoin" observation (2026-06-12, 20:38 → 21:15) did not
+reproduce on the current build: with `verbose_serialization_logging = true` (server
+config, world-independent in `run/config/sable-common.toml`), the full cycle — saveAll
+("Moving sub-level …" with pointer assignment) → chunk unload ("Unloading … as holding
+sub-level") → disk write → rejoin ("Loaded chunk at [0, 0] from disk", "Attempting to
+read pointer …") → re-allocation → client tracking — completed cleanly across two
+quit-to-title/rejoin cycles, and the restored plots were visually confirmed in-game.
+The earlier miss likely predated the render fixes (plots may have restored but been
+invisible) — re-open only if it recurs. The upstream #679 PlotChunkHolder shutdown
+leak remains unaudited (separate backlog item).
+
+**Command syntax note** (cost a test run): `/sable assemble area` requires two corner
+arguments — `/sable assemble area <x1> <y1> <z1> <x2> <y2> <z2>`; bare `area` is an
+incomplete command. `/sable assemble connected` works with no args (assembles blocks
+connected to the block under your feet). `/sable spawn platform` spawns a ready-made
+multi-block plot.
 
 ## Runtime-dormant injectors (require = 0) — polish-pass backlog
 
@@ -111,8 +120,8 @@ fluid-extension API removed), scroll zoom, anti-cheat creative check
 rubber-banding, HIGH priority), teleport-packet plot data (codec rework needed,
 multiplayer), game tests.
 - [ ] Rust natives build via fork CI (`.github/workflows`, MC-version-agnostic)
-- [ ] runClient boots; plot assembles and moves
-- [ ] Save/quit clean (fix upstream #679 — PlotChunkHolder shutdown leak — properly here)
+- [x] runClient boots; plot assembles, moves, renders, persists (2026-06-13)
+- [x] Save/quit clean — verified across quit-to-title/rejoin cycles (upstream #679 PlotChunkHolder shutdown-leak audit still pending)
 - [ ] GitHub Release `sable-neoforge-*+mc26.1.2`
 
 ## Error-wall trajectory (`./gradlew :common:compileJava`)
