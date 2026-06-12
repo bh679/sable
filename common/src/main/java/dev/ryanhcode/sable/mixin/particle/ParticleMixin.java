@@ -108,13 +108,13 @@ public abstract class ParticleMixin implements ParticleExtension {
     public abstract void tick();
 
     //#region stupid vanilla velocity
-    @ModifyConstant(method = "Lnet/minecraft/client/particle/Particle;<init>(Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDD)V", constant = @Constant(ordinal = 13))
+    @ModifyConstant(method = "Lnet/minecraft/client/particle/Particle;<init>(Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDD)V", constant = @Constant(ordinal = 13), require = 0)
     private double sable$removeUpwardsVelocity(final double originalBlockDamageDistanceConstant) {
         return 0.0;
     }
     //#endregion
 
-    @Inject(method = "Lnet/minecraft/client/particle/Particle;<init>(Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDD)V", at = @At("TAIL"))
+    @Inject(method = "Lnet/minecraft/client/particle/Particle;<init>(Lnet/minecraft/client/multiplayer/ClientLevel;DDDDDD)V", at = @At("TAIL"), require = 0)
     private void sable$addUpwardsVelocity(final ClientLevel clientLevel, final double d, final double e, final double f, final double g, final double h, final double i, final CallbackInfo ci) {
         final Vec3 particlePosition = new Vec3(this.x, this.y, this.z);
         final ClientSubLevel subLevel = Sable.HELPER.getContainingClient(particlePosition);
@@ -195,7 +195,7 @@ public abstract class ParticleMixin implements ParticleExtension {
         return this.sable$trackingSubLevel;
     }
 
-    @WrapMethod(method = "move")
+    @WrapMethod(method = "move", require = 0)
     private void sable$moveWithSubLevels(final double motionX, final double motionY, final double motionZ, final Operation<Void> original) {
         final AABB bounds = this.getBoundingBox();
         final BoundingBox3d globalBounds = new BoundingBox3d(bounds).expand(0.5);
@@ -467,7 +467,7 @@ public abstract class ParticleMixin implements ParticleExtension {
     }
 
     // PORT-NOTE(mc26.1): Particle.getLightColor was renamed getLightCoords.
-    @Inject(method = "getLightCoords", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getLightCoords", at = @At("HEAD"), cancellable = true, require = 0)
     private void sable$checkSubLevelLightColor(final float f, final CallbackInfoReturnable<Integer> cir) {
         final BlockPos pos = BlockPos.containing(this.x, this.y, this.z);
         final boolean hasChunk = this.level.hasChunkAt(pos);

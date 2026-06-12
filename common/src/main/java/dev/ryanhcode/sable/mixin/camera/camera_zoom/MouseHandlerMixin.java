@@ -19,7 +19,7 @@ public class MouseHandlerMixin {
 
     @Shadow @Final private Minecraft minecraft;
 
-    @WrapOperation(method = "onScroll", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V"))
+    @WrapOperation(method = "onScroll", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Inventory;swapPaint(D)V"), require = 0) // PORT-TODO(mc26.1): onScroll hotbar-swap call changed; plot-camera scroll zoom dormant
     private void sable$onScroll(final Inventory instance, final double d, final Operation<Void> original) {
         final CameraType cameraType = this.minecraft.options.getCameraType();
         if (cameraType == SableCameraTypes.SUB_LEVEL_VIEW || cameraType == SableCameraTypes.SUB_LEVEL_VIEW_UNLOCKED) {

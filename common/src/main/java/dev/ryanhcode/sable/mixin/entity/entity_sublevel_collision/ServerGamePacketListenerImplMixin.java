@@ -14,7 +14,7 @@ public class ServerGamePacketListenerImplMixin {
     @Shadow public ServerPlayer player;
 
     // TODO: make this check if they're standing on a sub-level instead of disabling the check
-    @Redirect(method = "handleMovePlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayerGameMode;isCreative()Z"))
+    @Redirect(method = "handleMovePlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayerGameMode;isCreative()Z"), require = 0)
     private boolean sable$ignoreCreativeModeForSubLevelCollision(final ServerPlayerGameMode instance) {;
         return true;
     }

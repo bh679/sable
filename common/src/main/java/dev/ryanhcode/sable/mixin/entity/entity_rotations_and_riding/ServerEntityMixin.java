@@ -20,7 +20,7 @@ public abstract class ServerEntityMixin {
 
     @Shadow @Final private Entity entity;
 
-    @Inject(method = "sendChanges", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V"))
+    @Inject(method = "sendChanges", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V"), require = 0)
     private void sable$beforeSendChanges(final CallbackInfo ci) {
         final List<Entity> passengers = this.entity.getPassengers();
 

@@ -97,6 +97,7 @@ public interface SubLevelRenderDispatcher extends NativeResource, ResourceManage
     void appendChunkDraws(final Iterable<ClientSubLevel> sublevels,
                           final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups,
                           final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+                          final int uboIndexOffset,
                           final int[] maxIndexCount,
                           final Matrix4fc vanillaModelView,
                           final double cameraX, final double cameraY, final double cameraZ,

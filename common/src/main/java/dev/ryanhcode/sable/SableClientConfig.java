@@ -60,6 +60,12 @@ public final class SableClientConfig {
         // water-occlusion toggles no longer drive anything (Veil shader
         // features stripped); the options are kept so existing config files
         // load unchanged. Only the renderer selection remains live.
-        Minecraft.getInstance().execute(() -> SubLevelRenderer.setImpl(SableClientConfig.SELECTED_RENDERER.get()));
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft == null) {
+            // mc26.1: config Loading fires before the client instance exists;
+            // the default renderer selection applies lazily on first use.
+            return;
+        }
+        minecraft.execute(() -> SubLevelRenderer.setImpl(SableClientConfig.SELECTED_RENDERER.get()));
     }
 }

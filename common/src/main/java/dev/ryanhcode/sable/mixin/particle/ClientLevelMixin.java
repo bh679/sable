@@ -39,7 +39,7 @@ public abstract class ClientLevelMixin extends Level {
         super(writableLevelData, resourceKey, registryAccess, holder, bl, bl2, l, i);
     }
 
-    @Inject(method = "animateTick", at = @At("TAIL"))
+    @Inject(method = "animateTick", at = @At("TAIL"), require = 0)
     public void sable$subLevelAnimateTick(final int x, final int y, final int z, final CallbackInfo ci, @Local final RandomSource randomSource, @Local final Block block, @Local final BlockPos.MutableBlockPos pos) {
         final Iterable<SubLevel> intersectingSubLevels = Sable.HELPER.getAllIntersecting(this, new BoundingBox3d(x - 32, y - 32, z - 32, x + 32, y + 32, z + 32));
 

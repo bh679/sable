@@ -290,6 +290,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
      */
     public void appendChunkDraws(final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<com.mojang.blaze3d.buffers.GpuBufferSlice[]>>>> drawGroups,
                                  final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+                                 final int uboIndexOffset,
                                  final int[] maxIndexCount,
                                  final Matrix4fc vanillaModelView,
                                  final double camX, final double camY, final double camZ,
@@ -331,7 +332,7 @@ public class VanillaChunkedSubLevelRenderData implements SubLevelRenderData {
                 }
 
                 if (sectionUboIndex == -1) {
-                    sectionUboIndex = sectionInfos.size();
+                    sectionUboIndex = uboIndexOffset + sectionInfos.size();
                     sectionInfos.add(new DynamicUniforms.ChunkSectionInfo(
                             new Matrix4f(sectionMatrix),
                             (int) (sectionOrigin.getX() - this.origin.x()) + fx,

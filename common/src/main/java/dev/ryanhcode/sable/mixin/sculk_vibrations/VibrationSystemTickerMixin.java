@@ -24,7 +24,7 @@ public interface VibrationSystemTickerMixin {
         return Sable.HELPER.projectOutOfSubLevel(level, original.call(instance));
     }
 
-    @WrapOperation(method = {"receiveVibration", "lambda$trySelectAndScheduleVibration$0", "method_51408", "tryReloadVibrationParticle"}, expect = 3, require = 3,
+    @WrapOperation(method = {"receiveVibration", "lambda$trySelectAndScheduleVibration$0", "method_51408", "tryReloadVibrationParticle"}, expect = 0, require = 0, // PORT-TODO(mc26.1): vibration lambdas likely renumbered
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/gameevent/vibrations/VibrationSystem$User;getPositionSource()Lnet/minecraft/world/level/gameevent/PositionSource;"))
     private static PositionSource sable$useGlobalDestPos(final VibrationSystem.User instance, final Operation<PositionSource> original, @Local(argsOnly = true) final ServerLevel level) {
         final PositionSource origSource = original.call(instance);

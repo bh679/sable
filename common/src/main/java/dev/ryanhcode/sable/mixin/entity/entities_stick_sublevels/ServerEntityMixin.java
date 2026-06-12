@@ -38,7 +38,7 @@ public class ServerEntityMixin {
     @Unique
     private Vec3 sable$oldPos = null;
 
-    @Inject(method = "sendChanges", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;trackingPosition()Lnet/minecraft/world/phys/Vec3;", shift = At.Shift.BEFORE))
+    @Inject(method = "sendChanges", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;trackingPosition()Lnet/minecraft/world/phys/Vec3;", shift = At.Shift.BEFORE), require = 0)
     private void sable$pre(final CallbackInfo ci, @Share("actuallyInSubLevel") final LocalBooleanRef actuallyInSubLevel) {
         // TODO: Finish for non living entities
         this.sable$oldPos = null;
@@ -60,7 +60,7 @@ public class ServerEntityMixin {
         }
     }
 
-    @Inject(method = "sendChanges", at = @At(value = "RETURN"))
+    @Inject(method = "sendChanges", at = @At(value = "RETURN"), require = 0)
     private void sable$postTransform(final CallbackInfo ci) {
         if (this.sable$oldPos != null) {
             ((EntityMovementExtension) this.entity).sable$setPosField(this.sable$oldPos);
@@ -68,7 +68,7 @@ public class ServerEntityMixin {
         }
     }
 
-    @WrapOperation(method = "sendChanges", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V"))
+    @WrapOperation(method = "sendChanges", at = @At(value = "INVOKE", target = "Ljava/util/function/Consumer;accept(Ljava/lang/Object;)V"), require = 0)
     private void sable$sendChanges(final Consumer<?> instance, final Object t, final Operation<Void> original, @Share("actuallyInSubLevel") final LocalBooleanRef actuallyInSubLevel) {
         if (actuallyInSubLevel.get() && t instanceof final PacketActuallyInSubLevelExtension extension) {
             extension.sable$setActuallyInSubLevel(true);

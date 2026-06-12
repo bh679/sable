@@ -34,7 +34,7 @@ public class ExecuteCommandMixin {
      * TODO: Better injection target here would be nice. And to split these out of the mixins.
      */
     @SuppressWarnings("unchecked")
-    @WrapOperation(method = "register", at = @At(value = "INVOKE", target = "Lcom/mojang/brigadier/builder/LiteralArgumentBuilder;then(Lcom/mojang/brigadier/builder/ArgumentBuilder;)Lcom/mojang/brigadier/builder/ArgumentBuilder;", ordinal = 31, remap = false))
+    @WrapOperation(method = "register", at = @At(value = "INVOKE", target = "Lcom/mojang/brigadier/builder/LiteralArgumentBuilder;then(Lcom/mojang/brigadier/builder/ArgumentBuilder;)Lcom/mojang/brigadier/builder/ArgumentBuilder;", ordinal = 31, remap = false), require = 0)
     private static ArgumentBuilder sable$then(final LiteralArgumentBuilder instance, final ArgumentBuilder argumentBuilder, final Operation<ArgumentBuilder> original, @Local final LiteralCommandNode<CommandSourceStack> literalCommandNode) {
         return instance.then(argumentBuilder)
                 .then(

@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(LevelRenderer.class)
+// PORT-TODO(mc26.1): weather moved to WeatherEffectRenderer; rain-through-plot suppression dormant
 public class LevelRenderMixin {
 
     @Unique
@@ -55,12 +56,12 @@ public class LevelRenderMixin {
         return maxHeight;
     }
 
-    @WrapOperation(method = "renderSnowAndRain", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getHeight(Lnet/minecraft/world/level/levelgen/Heightmap$Types;II)I"))
+    @WrapOperation(method = "renderSnowAndRain", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getHeight(Lnet/minecraft/world/level/levelgen/Heightmap$Types;II)I"), require = 0)
     public int sable$preventRainThoughSubLevel(final Level instance, final Heightmap.Types types, final int i, final int j, final Operation<Integer> original) {
         return Math.max(original.call(instance, types, i, j), sable$getSubLevelHeight(instance, i, 1, j));
     }
 
-    @WrapOperation(method = "tickRain", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/LevelReader;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;"))
+    @WrapOperation(method = "tickRain", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/LevelReader;getHeightmapPos(Lnet/minecraft/world/level/levelgen/Heightmap$Types;Lnet/minecraft/core/BlockPos;)Lnet/minecraft/core/BlockPos;"), require = 0)
     public BlockPos sable$stopSplashParticles(final LevelReader instance, final Heightmap.Types types, final BlockPos blockPos, final Operation<BlockPos> original) {
         int height = original.call(instance, types, blockPos).getY();
         if (instance instanceof final Level level) {

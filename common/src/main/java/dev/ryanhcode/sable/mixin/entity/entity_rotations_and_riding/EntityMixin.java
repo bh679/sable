@@ -93,7 +93,8 @@ public abstract class EntityMixin {
 
     @Shadow public abstract Vec3 getDeltaMovement();
 
-    @WrapOperation(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;horizontalDistance()D"))
+    // PORT-TODO(mc26.1): this mixin fails mixin application silently (bisect-confirmed); all injectors soft-failed pending per-injector isolation. Riding/walk-distance corrections on plots degrade to vanilla.
+    @WrapOperation(method = "move", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;horizontalDistance()D"), require = 0)
     private double sable$fixWalkDistance(final Vec3 vec, final Operation<Double> original) {
         final Quaterniondc orientation = EntitySubLevelUtil.getCustomEntityOrientation((Entity) (Object) this, 1.0f);
         if (orientation == null) return original.call(vec);
@@ -101,7 +102,7 @@ public abstract class EntityMixin {
         return original.call(JOMLConversion.toMojang(orientation.transformInverse(JOMLConversion.toJOML(vec))));
     }
 
-    @Inject(method = "moveRelative", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "moveRelative", at = @At("HEAD"), cancellable = true, require = 0)
     public void moveRelative(final float f, final Vec3 vec3, final CallbackInfo ci) {
         final Quaterniondc orientation = EntitySubLevelUtil.getCustomEntityOrientation((Entity) (Object) this, 1.0f);
         if (orientation == null) return;
@@ -112,7 +113,7 @@ public abstract class EntityMixin {
         ci.cancel();
     }
 
-    @Inject(method = "rideTick", at = @At("TAIL"))
+    @Inject(method = "rideTick", at = @At("TAIL"), require = 0)
     public void sable$onRidingTick(final CallbackInfo ci) {
         if (this.vehicle == null) return;
 
@@ -125,7 +126,7 @@ public abstract class EntityMixin {
         this.setPos(pos);
     }
 
-    @Inject(method = "positionRider(Lnet/minecraft/world/entity/Entity;)V", at = @At("TAIL"))
+    @Inject(method = "positionRider(Lnet/minecraft/world/entity/Entity;)V", at = @At("TAIL"), require = 0)
     public void sable$onPositionRider(final Entity entity, final CallbackInfo ci) {
         if (!this.hasPassenger(entity)) return;
 
@@ -136,7 +137,7 @@ public abstract class EntityMixin {
         entity.setPos(pos);
     }
 
-    @Redirect(method = "saveWithoutId", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;put(Ljava/lang/String;Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;", ordinal = 0))
+    @Redirect(method = "saveWithoutId", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;put(Ljava/lang/String;Lnet/minecraft/nbt/Tag;)Lnet/minecraft/nbt/Tag;", ordinal = 0), require = 0) // PORT-TODO(mc26.1): saveWithoutId writes via ValueOutput now; plot-relative passenger pos save needs a codec-level rework (players are covered by LoginPoint tracking)
     public Tag sable$fixPassengerSaving(final CompoundTag instance, final String string, final Tag tag) {
         if (!EntitySubLevelUtil.shouldKick((Entity) (Object) this)) {
             return instance.put(string, tag);

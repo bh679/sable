@@ -31,7 +31,31 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 - [x] Mechanical 26.1 renames (Identifier, ChunkPos record, NBT Optional API, isClientSide(), height accessors, Profiler.get(), RenderType/BlockAndTintGetter moves)
 - [x] **Common module compiles** (1212 → 0 over 9 passes; render cluster rebuilt on prepareChunkRenders/SectionMesh, plot core + long tail ported)
 - [x] NeoForge module compiles; `sable-neoforge-26.1.2-1.3.0-dt.1.jar` assembles (game tests excluded pending 26.1 test-framework port)
-- [ ] **runClient boots** ← current (mixin-application fixes; see "Runtime verification list" below)
+- [x] **runClient boots to title screen and into a world** (39 boot iterations of mixin-application fixes; player joins, server ticks, Rapier natives load)
+- [ ] **Plot assembles and moves in-world** ← current (`/sable assemble cube`-family commands; then DT's use-cases)
+
+## Runtime-dormant injectors (require = 0) — polish-pass backlog
+
+Fixed properly during the boot loop: BlockAndLightGetter retarget (plot light), Block
+`updateEntityMovementAfterFallOn`, Player `canFallAtLeast(DDD)`/interaction-range renames,
+InterpolationHandler lerp rewrite, `snapTo`, arrow `isInGround()`, popResource LVT,
+camera rotate-with-plot on 2-arg `setRotation`, `Minecraft#pick` retarget, furnace
+`recipesUsed` type, world-border per-subclass link, `LevelChunk.setBlockState` flags,
+ValueInput/ValueOutput save hooks, sea-level-during-ctor guard, config-loading
+null-guard, moved-package target strings (`projectile/arrow/`), `tickInGameSound`,
+swimming camera near-plane/level shadows.
+
+Dormant (feature degrades to vanilla; re-port deliberately): single-block plot draw,
+sub-level block entities (chests on plots invisible!), entity render-pose smoothing +
+rotation sync (`entity_rotations_and_riding` Entity/ServerEntity — silent-apply
+mystery, bisect-confirmed), block-destroy decals, debug boxes/gizmo, name tags,
+crosshair attack indicator, leashes, sleeping pose, weather-on-plots, sculk lambdas,
+loadEntityRecursive riding restore, particles on plots (spawn transforms partly dormant),
+fluid spread at plot edges, arrows embedding in plot blocks, swim-on-plot (NeoForge
+fluid-extension API removed), scroll zoom, anti-cheat creative check
+(`entity_sublevel_collision.ServerGamePacketListenerImplMixin` — affects moving-plot
+rubber-banding, HIGH priority), teleport-packet plot data (codec rework needed,
+multiplayer), game tests.
 - [ ] Rust natives build via fork CI (`.github/workflows`, MC-version-agnostic)
 - [ ] runClient boots; plot assembles and moves
 - [ ] Save/quit clean (fix upstream #679 — PlotChunkHolder shutdown leak — properly here)

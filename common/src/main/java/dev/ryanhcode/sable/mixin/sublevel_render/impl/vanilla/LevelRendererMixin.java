@@ -1,7 +1,7 @@
 package dev.ryanhcode.sable.mixin.sublevel_render.impl.vanilla;
 
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.llamalad7.mixinextras.sugar.ref.LocalIntRef;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.systems.RenderPass;
 import dev.ryanhcode.sable.Sable;
@@ -19,6 +19,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
 import net.minecraft.client.renderer.chunk.RenderRegionCache;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -97,18 +98,19 @@ public abstract class LevelRendererMixin {
     }
 
     /**
-     * Appends sub-level section draws into vanilla's draw groups while the
-     * section dispatcher is still locked (right before {@code unlock()} in
-     * {@code prepareChunkRenders}). Each appended section carries its own
-     * model-view matrix, which encodes the plot's rotation + translation.
+     * Appends sub-level section draws to the frame's chunk renders.
+     *
+     * <p>mc26.1: implemented as a return-value modification — the returned
+     * {@code ChunkSectionsToRender} record's draw-group maps are appended to
+     * in place, and our per-section uniforms are written as an additional
+     * {@code DynamicUniforms} batch whose slices are concatenated after
+     * vanilla's (draw uploaders index into the merged array via an offset).
      */
-    @Inject(method = "prepareChunkRenders", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/chunk/SectionRenderDispatcher;unlock()V"))
-    private void sable$appendSubLevelDraws(final Matrix4fc modelViewMatrix, final CallbackInfoReturnable<?> cir,
-                                           @Local final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups,
-                                           @Local final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
-                                           @Local final LocalIntRef largestIndexCount) {
+    @ModifyReturnValue(method = "prepareChunkRenders", at = @At("RETURN"))
+    private ChunkSectionsToRender sable$appendSubLevelDraws(final ChunkSectionsToRender original,
+                                                            @Local(argsOnly = true) final Matrix4fc modelViewMatrix) {
         if (this.level == null) {
-            return;
+            return original;
         }
 
         final Iterable<ClientSubLevel> sublevels = ((ClientSubLevelContainer) ((SubLevelContainerHolder) this.level).sable$getPlotContainer()).getAllSubLevels();
@@ -119,9 +121,23 @@ public abstract class LevelRendererMixin {
         final int atlasWidth = atlas.getWidth(0);
         final int atlasHeight = atlas.getHeight(0);
 
-        final int[] maxIndexCount = {largestIndexCount.get()};
-        SubLevelRenderDispatcher.get().appendChunkDraws(sublevels, drawGroups, sectionInfos, maxIndexCount,
-                modelViewMatrix, cameraPosition.x, cameraPosition.y, cameraPosition.z, atlasWidth, atlasHeight);
-        largestIndexCount.set(maxIndexCount[0]);
+        final GpuBufferSlice[] vanillaSlices = original.chunkSectionInfos();
+        final java.util.List<DynamicUniforms.ChunkSectionInfo> ourInfos = new java.util.ArrayList<>();
+        final int[] maxIndexCount = {original.maxIndicesRequired()};
+
+        SubLevelRenderDispatcher.get().appendChunkDraws(sublevels, original.drawGroupsPerLayer(), ourInfos, vanillaSlices.length,
+                maxIndexCount, modelViewMatrix, cameraPosition.x, cameraPosition.y, cameraPosition.z, atlasWidth, atlasHeight);
+
+        if (ourInfos.isEmpty()) {
+            return original;
+        }
+
+        final GpuBufferSlice[] ourSlices = com.mojang.blaze3d.systems.RenderSystem.getDynamicUniforms()
+                .writeChunkSections(ourInfos.toArray(new DynamicUniforms.ChunkSectionInfo[0]));
+        final GpuBufferSlice[] merged = new GpuBufferSlice[vanillaSlices.length + ourSlices.length];
+        System.arraycopy(vanillaSlices, 0, merged, 0, vanillaSlices.length);
+        System.arraycopy(ourSlices, 0, merged, vanillaSlices.length, ourSlices.length);
+
+        return new ChunkSectionsToRender(original.textureView(), original.drawGroupsPerLayer(), maxIndexCount[0], merged);
     }
 }

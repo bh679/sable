@@ -2,7 +2,7 @@ package dev.ryanhcode.sable.mixin.tracking_points;
 
 import dev.ryanhcode.sable.mixinterface.player_freezing.PlayerFreezeExtension;
 import dev.ryanhcode.sable.sublevel.tracking_points.SubLevelTrackingPointSavedData;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -21,10 +21,12 @@ public abstract class EntityMixin {
     @Shadow public abstract void setPosRaw(double d, double e, double f);
 
     @Inject(method = "load", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/Entity;setPosRaw(DDD)V", shift = At.Shift.AFTER))
-    private void sable$load(final CompoundTag compoundTag, final CallbackInfo ci) {
-        if (compoundTag.contains("LoginPoint")) {
+    private void sable$load(final ValueInput input, final CallbackInfo ci) {
+        // mc26.1: Entity#load takes a ValueInput now
+        final java.util.Optional<java.util.UUID> loginPoint = input.read("LoginPoint", net.minecraft.core.UUIDUtil.CODEC);
+        if (loginPoint.isPresent()) {
             final SubLevelTrackingPointSavedData data = SubLevelTrackingPointSavedData.getOrLoad((ServerLevel) this.level);
-            final SubLevelTrackingPointSavedData.TakenLoginPoint point = data.take(compoundTag.read("LoginPoint", net.minecraft.core.UUIDUtil.CODEC).orElseThrow(), true);
+            final SubLevelTrackingPointSavedData.TakenLoginPoint point = data.take(loginPoint.get(), true);
 
             if (point != null) {
                 final Vector3dc position = point.position();
@@ -34,8 +36,9 @@ public abstract class EntityMixin {
                     extension.sable$freezeTo(point.subLevelId(), point.localAnchor().add(0.0, 0.2, 0.0));
                 }
 
-                // kick them out of vehicle
-                compoundTag.remove("RootVehicle");
+                // PORT-NOTE(mc26.1): ValueInput is immutable — the old
+                // remove("RootVehicle") vehicle-kick is no longer possible
+                // here; the freeze extension re-anchors the player anyway.
             }
         }
     }

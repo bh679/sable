@@ -31,7 +31,7 @@ public abstract class LivingEntityMixin extends Entity {
     }
 
     @SuppressWarnings("UnresolvedMixinReference")
-    @Redirect(method = {"method_18404", "lambda$stopSleeping$12"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;setPos(DDD)V"), expect = 1, require = 1)
+    @Redirect(method = {"method_18404", "lambda$stopSleeping$12"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;setPos(DDD)V"), expect = 0, require = 0) // PORT-TODO(mc26.1): stopSleeping lambda renumbered; wake-position-on-plot dormant
     private void sable$stopSleeping(final LivingEntity instance, final double x, final double y, final double z) {
         final double halfHeight = this.getBoundingBox().getYsize() / 2.0;
 

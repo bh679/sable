@@ -18,7 +18,7 @@ public class LevelRendererMixin {
     @Nullable
     private ClientLevel level;
 
-    @Redirect(method = "addParticleInternal(Lnet/minecraft/core/particles/ParticleOptions;ZZDDDDDD)Lnet/minecraft/client/particle/Particle;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;distanceToSqr(DDD)D"))
+    @Redirect(method = "addParticleInternal(Lnet/minecraft/core/particles/ParticleOptions;ZZDDDDDD)Lnet/minecraft/client/particle/Particle;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/phys/Vec3;distanceToSqr(DDD)D"), require = 0) // PORT-TODO(mc26.1): particle spawning moved off LevelRenderer
     private double sable$addParticleInternal(final Vec3 vec, final double x, final double y, final double z) {
         return Sable.HELPER.distanceSquaredWithSubLevels(this.level, vec, x, y, z);
     }

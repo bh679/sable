@@ -36,7 +36,16 @@ public record DimensionPhysics(Identifier dimension, int priority, Optional<Floa
     public static DimensionPhysics createDefault(final Level level) {
         // constructs a bezier air pressure curve approximating an exponential decay, centered around sea level
         // clamped to at most 1.5 pressure underground, and with a 40-meter smooth drop-off at the build limit
-        final double seaLevel = level.getSeaLevel();
+        // mc26.1: getSeaLevel() needs the chunk source's generator, which is
+        // still null while the plot container is created inside the
+        // ServerLevel constructor — fall back to the overworld default then.
+        double resolvedSeaLevel;
+        try {
+            resolvedSeaLevel = level.getSeaLevel();
+        } catch (final NullPointerException e) {
+            resolvedSeaLevel = 63.0;
+        }
+        final double seaLevel = resolvedSeaLevel;
 
         double currentAltitude = level.dimensionType().minY();
         final double maxAltitude = currentAltitude + level.dimensionType().logicalHeight();

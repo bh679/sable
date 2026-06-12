@@ -93,6 +93,7 @@ public class VanillaSubLevelRenderDispatcher implements SubLevelRenderDispatcher
     public void appendChunkDraws(final Iterable<ClientSubLevel> sublevels,
                                  final EnumMap<ChunkSectionLayer, Int2ObjectOpenHashMap<List<RenderPass.Draw<GpuBufferSlice[]>>>> drawGroups,
                                  final List<DynamicUniforms.ChunkSectionInfo> sectionInfos,
+                                 final int uboIndexOffset,
                                  final int[] maxIndexCount,
                                  final Matrix4fc vanillaModelView,
                                  final double cameraX, final double cameraY, final double cameraZ,
@@ -108,7 +109,7 @@ public class VanillaSubLevelRenderDispatcher implements SubLevelRenderDispatcher
                 continue;
             }
 
-            chunkedRenderData.appendChunkDraws(drawGroups, sectionInfos, maxIndexCount, vanillaModelView, cameraX, cameraY, cameraZ, atlasWidth, atlasHeight);
+            chunkedRenderData.appendChunkDraws(drawGroups, sectionInfos, uboIndexOffset, maxIndexCount, vanillaModelView, cameraX, cameraY, cameraZ, atlasWidth, atlasHeight);
         }
     }
 

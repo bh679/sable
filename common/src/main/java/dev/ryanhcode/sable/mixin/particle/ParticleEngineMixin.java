@@ -33,12 +33,12 @@ public abstract class ParticleEngineMixin {
 
     @Shadow protected ClientLevel level;
 
-    @Inject(method = "add", at = @At("TAIL"))
+    @Inject(method = "add", at = @At("TAIL"), require = 0)
     private void sable$onParticleAdd(final Particle particle, final CallbackInfo ci) {
         ((ParticleExtension) particle).sable$initialKickOut();
     }
 
-    @WrapOperation(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/Particle;tick()V"))
+    @WrapOperation(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/Particle;tick()V"), require = 0)
     private void sable$onParticleTick(final Particle instance, final Operation<Void> original) {
         final ParticleExtension extension = ((ParticleExtension) instance);
 
@@ -47,7 +47,7 @@ public abstract class ParticleEngineMixin {
         extension.sable$moveWithInheritedVelocity();
     }
 
-    @Redirect(method = "crack", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/TerrainParticle;setPower(F)Lnet/minecraft/client/particle/Particle;"))
+    @Redirect(method = "crack", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/particle/TerrainParticle;setPower(F)Lnet/minecraft/client/particle/Particle;"), require = 0)
     private Particle sable$addCrackParticle(final TerrainParticle particle, final float v, @Local(argsOnly = true) final BlockPos pos, @Local final BlockState state) {
         final Vec3 particlePosition = new Vec3(particle.x, particle.y, particle.z);
 

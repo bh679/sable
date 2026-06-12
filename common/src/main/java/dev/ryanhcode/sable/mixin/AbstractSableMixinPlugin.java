@@ -40,6 +40,18 @@ public abstract class AbstractSableMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(final String targetClassName, final String mixinClassName) {
+        // PORT-DEBUG(mc26.1): temporary bisect hook — comma-separated substrings
+        // in -Dsable.port.skip disable matching mixins. Remove after port.
+        final String skip = System.getProperty("sable.port.skip");
+        if (skip != null) {
+            for (final String part : skip.split(",")) {
+                if (!part.isBlank() && mixinClassName.contains(part.trim())) {
+                    LOGGER.warn("PORT-DEBUG skipping mixin {}", mixinClassName);
+                    return false;
+                }
+            }
+        }
+
         // TODO: Housekeeping
         if (mixinClassName.startsWith("dev.ryanhcode.sable.mixin.sublevel_render.impl")) {
             // mc26.1 port branch: only the vanilla renderer impl exists.

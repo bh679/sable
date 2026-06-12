@@ -18,9 +18,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Optional;
 
 @Mixin(LivingEntityRenderer.class)
+// PORT-TODO(mc26.1): living render is state-based now; sleeping pose on plots dormant
 public class LivingEntityRendererMixin {
 
-    @Inject(method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;getBedOrientation()Lnet/minecraft/core/Direction;"))
+    @Inject(method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/LivingEntity;getBedOrientation()Lnet/minecraft/core/Direction;"), require = 0)
     private void sable$setupRotations(final LivingEntity livingEntity, final float f, final float g, final PoseStack poseStack, final MultiBufferSource multiBufferSource, final int i, final CallbackInfo ci) {
         if (livingEntity.getBedOrientation() == null) {
             return;

@@ -22,22 +22,24 @@ public abstract class ServerLevelMixin {
     @Shadow
     public abstract ServerLevel getLevel();
 
+    // mc26.1: explode() returns void and gained a WeightedList<ExplosionParticleInfo> param.
     @WrapMethod(method = "explode")
-    public Explosion sable$preExplode(final Entity entity,
-                                      final DamageSource damageSource,
-                                      final ExplosionDamageCalculator explosionDamageCalculator,
-                                      final double d,
-                                      final double e,
-                                      final double f,
-                                      final float g,
-                                      final boolean bl,
-                                      final Level.ExplosionInteraction explosionInteraction,
-                                      final ParticleOptions particleOptions,
-                                      final ParticleOptions particleOptions2,
-                                      final Holder<SoundEvent> holder,
-                                      final Operation<Explosion> original) {
+    public void sable$preExplode(final Entity entity,
+                                 final DamageSource damageSource,
+                                 final ExplosionDamageCalculator explosionDamageCalculator,
+                                 final double d,
+                                 final double e,
+                                 final double f,
+                                 final float g,
+                                 final boolean bl,
+                                 final Level.ExplosionInteraction explosionInteraction,
+                                 final ParticleOptions particleOptions,
+                                 final ParticleOptions particleOptions2,
+                                 final net.minecraft.util.random.WeightedList<net.minecraft.core.particles.ExplosionParticleInfo> blockParticles,
+                                 final Holder<SoundEvent> holder,
+                                 final Operation<Void> original) {
 
         final Vector3d projectedPos = Sable.HELPER.projectOutOfSubLevel(getLevel(), new Vector3d(d, e, f));
-        return original.call(entity, damageSource, explosionDamageCalculator, projectedPos.x, projectedPos.y, projectedPos.z, g, bl, explosionInteraction, particleOptions, particleOptions2, holder);
+        original.call(entity, damageSource, explosionDamageCalculator, projectedPos.x, projectedPos.y, projectedPos.z, g, bl, explosionInteraction, particleOptions, particleOptions2, blockParticles, holder);
     }
 }

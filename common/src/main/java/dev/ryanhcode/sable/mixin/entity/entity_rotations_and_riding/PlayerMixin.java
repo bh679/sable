@@ -33,7 +33,8 @@ public abstract class PlayerMixin extends LivingEntity {
         super(entityType, level);
     }
 
-    @Inject(method = "travel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;getDeltaMovement()Lnet/minecraft/world/phys/Vec3;", ordinal = 1))
+    // PORT-TODO(mc26.1): Player#travel is now a thin dispatcher; the redirected calls moved into LivingEntity travel internals. Up-vector-aware swimming on rotated plots is dormant until re-targeted.
+    @Inject(method = "travel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;getDeltaMovement()Lnet/minecraft/world/phys/Vec3;", ordinal = 1), require = 0)
     private void sable$storeUpDeltaMovement(final Vec3 vec3,
                                             final CallbackInfo ci,
                                             @Share("upDir") final LocalRef<Vector3d> upDir,
@@ -50,7 +51,7 @@ public abstract class PlayerMixin extends LivingEntity {
         upDeltaMovement.set(dir.mul(dir.dot(deltaMovement.x, deltaMovement.y, deltaMovement.z)));
     }
 
-    @Redirect(method = "travel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;setDeltaMovement(DDD)V"))
+    @Redirect(method = "travel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;setDeltaMovement(DDD)V"), require = 0)
     private void sable$modifyTravelSetDeltaMovement(final Player instance,
                                                     final double x,
                                                     final double y,

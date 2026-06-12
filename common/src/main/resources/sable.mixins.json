@@ -63,7 +63,8 @@
         "sublevel_sounds.ChannelAccessor",
         "sublevel_sounds.ClientLevelMixin",
         "sublevel_sounds.SoundEngineMixin",
-        "toast.IntegratedServerMixin"
+        "toast.IntegratedServerMixin",
+        "world_border.ClientLevelMixin"
     ],
     "mixins": [
         "assembly.AbstractFurnaceBlockEntityMixin",
@@ -104,7 +105,6 @@
         "entity.entity_interaction.ProjectileUtilMixin",
         "entity.entity_kicking.BlockMixin",
         "entity.entity_kicking.ServerLevelMixin",
-        "entity.entity_leashing.LeashableMixin",
         "entity.entity_pathfinding.FlyNodeEvaluatorMixin",
         "entity.entity_pathfinding.GroundPathNavigationMixin",
         "entity.entity_pathfinding.PathfindingContextMixin",
@@ -141,9 +141,6 @@
         "explosion.ServerLevelMixin",
         "extension.EntityMixin",
         "fluids_on_sub_levels.FlowingFluidMixin",
-        "game_test.GameTestInfoMixin",
-        "game_test.StructureUtilsMixin",
-        "game_test.TestCommandMixin",
         "impact.BeehiveBlockMixin",
         "impact.BellBlockMixin",
         "impact.TntBlockMixin",
@@ -188,8 +185,8 @@
         "voxel_shape_iteration.BitSetDiscreteVoxelShapeAccessor",
         "voxel_shape_iteration.DiscreteVoxelShapeAccessor",
         "voxel_shape_iteration.VoxelShapeMixin",
-        "world_border.LevelMixin",
-        "world_border.WorldBorderMixin"
+        "world_border.WorldBorderMixin",
+        "world_border.ServerLevelMixin"
     ],
     "injectors": {
         "defaultRequire": 1

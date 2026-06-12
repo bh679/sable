@@ -34,13 +34,13 @@ public class LevelChunkMixin {
     private BlockPos sable$blockSet = null;
 
     @Inject(method = "setBlockState", at = @At("HEAD"))
-    private void sable$preSetBlockState(final BlockPos pPos, final BlockState pState, final boolean pIsMoving,
+    private void sable$preSetBlockState(final BlockPos pPos, final BlockState pState, final int pFlags,
                                         final CallbackInfoReturnable<BlockState> cir) {
         this.sable$blockSet = pPos;
     }
 
     @Inject(method = "setBlockState", at = @At("RETURN"))
-    private void sable$postSetBlockState(final BlockPos pPos, final BlockState pState, final boolean pIsMoving,
+    private void sable$postSetBlockState(final BlockPos pPos, final BlockState pState, final int pFlags,
                                          final CallbackInfoReturnable<BlockState> cir) {
         if (this.sable$blockSet != null) {
             final SubLevel subLevel = Sable.HELPER.getContaining(this.level, this.sable$blockSet);

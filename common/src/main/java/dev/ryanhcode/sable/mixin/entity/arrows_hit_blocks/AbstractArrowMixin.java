@@ -37,7 +37,7 @@ public abstract class AbstractArrowMixin extends Entity {
         super(entityType, level);
     }
 
-    @Redirect(method = "onHitBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/projectile/AbstractArrow;setDeltaMovement(Lnet/minecraft/world/phys/Vec3;)V"))
+    @Redirect(method = "onHitBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/projectile/arrow/AbstractArrow;setDeltaMovement(Lnet/minecraft/world/phys/Vec3;)V"), require = 0)
     private void sable$setDeltaMovement(final AbstractArrow arrow,
                                         final Vec3 difference,
                                         @Local(argsOnly = true) final BlockHitResult blockHitResult,
@@ -63,7 +63,7 @@ public abstract class AbstractArrowMixin extends Entity {
         subLevelRef.set(subLevel);
     }
 
-    @Redirect(method = "onHitBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/projectile/AbstractArrow;setPosRaw(DDD)V"))
+    @Redirect(method = "onHitBlock", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/projectile/arrow/AbstractArrow;setPosRaw(DDD)V"), require = 0)
     private void sable$setPosRaw(final AbstractArrow instance,
                                  final double x,
                                  final double y,
@@ -101,7 +101,7 @@ public abstract class AbstractArrowMixin extends Entity {
         }
     }
 
-    @Redirect(method = "shouldFall", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;noCollision(Lnet/minecraft/world/phys/AABB;)Z"))
+    @Redirect(method = "shouldFall", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;noCollision(Lnet/minecraft/world/phys/AABB;)Z"), require = 0)
     private boolean sable$noCollision(final Level level, final AABB aabb) {
         final boolean original = level.noCollision(this, aabb);
 

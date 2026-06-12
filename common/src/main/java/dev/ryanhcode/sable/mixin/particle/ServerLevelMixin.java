@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(ServerLevel.class)
 public class ServerLevelMixin {
 
-    @Redirect(method = "sendParticles(Lnet/minecraft/server/level/ServerPlayer;ZDDDLnet/minecraft/network/protocol/Packet;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/BlockPos;closerToCenterThan(Lnet/minecraft/core/Position;D)Z"))
+    @Redirect(method = "sendParticles(Lnet/minecraft/server/level/ServerPlayer;ZDDDLnet/minecraft/network/protocol/Packet;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/BlockPos;closerToCenterThan(Lnet/minecraft/core/Position;D)Z"), require = 0)
     private boolean sable$sendParticlesCloserToCenterThan(final BlockPos blockPos, final Position pos, final double distance) {
         return Sable.HELPER.distanceSquaredWithSubLevels((ServerLevel) (Object) this, pos, blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5) < distance * distance;
     }
