@@ -24,7 +24,8 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: 21
+          # PORT-NOTE(mc26.1): fork builds on Java 25 (MC 26.1 toolchain).
+          java-version: 25
           cache: gradle
 
       - name: Setup Gradle
