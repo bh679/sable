@@ -19,7 +19,7 @@ public class PlayerListMixin {
 
     @Inject(method = "placeNewPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/network/ServerGamePacketListenerImpl;send(Lnet/minecraft/network/protocol/Packet;)V", ordinal = 0, shift = At.Shift.AFTER))
     private void onPlayerJoin(final Connection connection, final ServerPlayer serverPlayer, final CommonListenerCookie commonListenerCookie, final CallbackInfo ci) {
-        final SableUDPServer server = SableUDPServer.getServer(serverPlayer.server);
+        final SableUDPServer server = SableUDPServer.getServer(serverPlayer.getServer());
 
         if (server == null) {
             return;

@@ -6,10 +6,13 @@ import dev.ryanhcode.sable.SableConfig;
 import dev.ryanhcode.sable.command.SableCommand;
 import dev.ryanhcode.sable.command.argument.SubLevelSelectorModifiers;
 import dev.ryanhcode.sable.index.SableAttributes;
+import dev.ryanhcode.sable.index.SableTicketTypes;
 import dev.ryanhcode.sable.physics.config.FloatingBlockMaterialDataHandler;
 import dev.ryanhcode.sable.physics.config.block_properties.PhysicsBlockPropertiesDefinitionLoader;
 import dev.ryanhcode.sable.physics.config.dimension_physics.DimensionPhysicsData;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.CrashReportCallables;
@@ -41,6 +44,14 @@ public final class SableNeoForge {
         SableAttributes.PUNCH_STRENGTH = attributes.register(SableAttributes.PUNCH_STRENGTH_NAME, () -> SableAttributes.PUNCH_STRENGTH_ATTRIBUTE);
         SableAttributes.PUNCH_COOLDOWN = attributes.register(SableAttributes.PUNCH_COOLDOWN_NAME, () -> SableAttributes.PUNCH_COOLDOWN_ATTRIBUTE);
         attributes.register(modBus);
+
+        // mc26.1: TicketType is a registered record now — register Sable's
+        // force-load ticket type and publish it to the common holder.
+        final DeferredRegister<TicketType> ticketTypes = DeferredRegister.create(Registries.TICKET_TYPE, Sable.MOD_ID);
+        final var subLevelLoaded = ticketTypes.register("sub_level_loaded",
+                () -> new TicketType(TicketType.NO_TIMEOUT, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION));
+        ticketTypes.register(modBus);
+        modBus.<FMLCommonSetupEvent>addListener(event -> SableTicketTypes.SUB_LEVEL_LOADED = subLevelLoaded.get());
 
         modContainer.registerConfig(ModConfig.Type.COMMON, SableConfig.SPEC);
 

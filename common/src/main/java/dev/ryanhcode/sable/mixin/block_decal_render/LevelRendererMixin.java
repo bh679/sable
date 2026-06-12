@@ -49,7 +49,7 @@ public abstract class LevelRendererMixin {
         }
 
         final Pose3dc renderPose = subLevel.renderPose();
-        final Vec3 cameraPos = camera.getPosition();
+        final Vec3 cameraPos = camera.position();
         final Vec3 projectedPos = renderPose.transformPosition(plotPos);
 
         ps.popPose();

@@ -1,6 +1,7 @@
 package dev.ryanhcode.sable.sublevel.system.ticket;
 
 import dev.ryanhcode.sable.SableConfig;
+import dev.ryanhcode.sable.index.SableTicketTypes;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.physics.object.ArbitraryPhysicsObject;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
@@ -39,11 +40,6 @@ public class PhysicsChunkTicketManager {
 
     public static final double MAX_PREDICTION_DISTANCE = 20.0;
 
-    public static final TicketType<UUID> SUB_LEVEL_LOADED_TICKET_TYPE = TicketType.create(
-            "sable_sub_level_loaded",
-            UUID::compareTo
-    );
-
     /**
      * The physics chunks that are currently loaded.
      */
@@ -53,6 +49,13 @@ public class PhysicsChunkTicketManager {
      * Chunks that are force-loaded by force-loaded sub-levels inhabiting them
      */
     private final Long2ObjectMap<ObjectArraySet<InhabitedChunkTicket>> forcedInhabitedChunks = new Long2ObjectOpenHashMap<>();
+
+    /**
+     * mc26.1: vanilla tickets carry no identity payload, so exactly one vanilla
+     * ticket per force-loaded chunk is tracked here; the per-sub-level
+     * bookkeeping lives in {@link #forcedInhabitedChunks}.
+     */
+    private final Long2ObjectMap<Ticket> vanillaChunkTickets = new Long2ObjectOpenHashMap<>();
 
     /**
      * Updates the state of the ticket manager.
@@ -81,8 +84,7 @@ public class PhysicsChunkTicketManager {
             return;
         }
 
-        final DistanceManager distanceManager = level.getChunkSource().chunkMap.getDistanceManager();
-        this.expireForcedInhabitedChunks(gameTime, distanceManager);
+        this.expireForcedInhabitedChunks(level, gameTime);
 
         final LongOpenHashSet unloadedChunks = new LongOpenHashSet();
 
@@ -165,7 +167,7 @@ public class PhysicsChunkTicketManager {
                     final boolean chunkLoadedEnough = isChunkLoadedEnough(level, x, z);
 
                     if (forceLoaded.contains(subLevel)) {
-                        this.inhabitChunk(level, distanceManager, uuid, gameTime, chunkLong, x, z);
+                        this.inhabitChunk(level, uuid, gameTime, chunkLong, x, z);
                     } else {
                         if (!chunkLoadedEnough || unloadedChunks.contains(chunkLong)) {
                             // The sub-level has now entered an unloaded chunk.
@@ -187,7 +189,7 @@ public class PhysicsChunkTicketManager {
 
                                 continue subLevelLoop;
                             } else {
-                                this.inhabitChunk(level, distanceManager, uuid, gameTime, chunkLong, x, z);
+                                this.inhabitChunk(level, uuid, gameTime, chunkLong, x, z);
                             }
                         }
                     }
@@ -218,7 +220,6 @@ public class PhysicsChunkTicketManager {
      * Marks a chunk as sub-level inhabited and force-loads it as a result
      */
     private void inhabitChunk(final ServerLevel level,
-                              final DistanceManager distanceManager,
                               final UUID subLevelId,
                               final long gameTime,
                               final long chunkLong,
@@ -230,12 +231,15 @@ public class PhysicsChunkTicketManager {
             this.forcedInhabitedChunks.put(chunkLong, set = new ObjectArraySet<>(1));
         }
 
-        final Ticket<UUID> newChunkTicket = new Ticket<>(PhysicsChunkTicketManager.SUB_LEVEL_LOADED_TICKET_TYPE, ChunkLevel.byStatus(FullChunkStatus.ENTITY_TICKING), subLevelId);
-        final InhabitedChunkTicket newSableTicket = new InhabitedChunkTicket(subLevelId, gameTime, newChunkTicket);
+        final InhabitedChunkTicket newSableTicket = new InhabitedChunkTicket(subLevelId, gameTime);
 
         if (set.add(newSableTicket)) {
-            distanceManager.addTicket(chunkLong, newChunkTicket);
-            distanceManager.tickingTicketsTracker.addTicket(chunkLong, newChunkTicket);
+            // One vanilla ticket per chunk; per-sub-level identity is tracked in the set.
+            if (!this.vanillaChunkTickets.containsKey(chunkLong)) {
+                final Ticket vanillaTicket = new Ticket(SableTicketTypes.SUB_LEVEL_LOADED, ChunkLevel.ENTITY_TICKING_LEVEL);
+                this.vanillaChunkTickets.put(chunkLong, vanillaTicket);
+                level.getChunkSource().addTicket(vanillaTicket, new ChunkPos(x, z));
+            }
 
             level.getChunk(x, z, ChunkStatus.FULL, true);
         } else {
@@ -279,7 +283,7 @@ public class PhysicsChunkTicketManager {
         }
     }
 
-    private void expireForcedInhabitedChunks(final long gameTime, final DistanceManager distanceManager) {
+    private void expireForcedInhabitedChunks(final ServerLevel level, final long gameTime) {
         final ObjectIterator<Long2ObjectMap.Entry<ObjectArraySet<InhabitedChunkTicket>>> forcedChunkIter = this.forcedInhabitedChunks.long2ObjectEntrySet().iterator();
 
         while (forcedChunkIter.hasNext()) {
@@ -287,23 +291,14 @@ public class PhysicsChunkTicketManager {
 
             final long chunkLong = entry.getLongKey();
             final ObjectArraySet<InhabitedChunkTicket> set = entry.getValue();
-            final Iterator<InhabitedChunkTicket> setIter = set.iterator();
-
-            while (setIter.hasNext()) {
-                final InhabitedChunkTicket ticket = setIter.next();
-
-                final boolean outdated = ticket.lastInhabitedTick() < gameTime - 20;
-
-                if (outdated) {
-                    final Ticket<UUID> chunkTicket = ticket.getTicket();
-
-                    distanceManager.removeTicket(chunkLong, chunkTicket);
-                    distanceManager.tickingTicketsTracker.removeTicket(chunkLong, chunkTicket);
-                    setIter.remove();
-                }
-            }
+            set.removeIf(ticket -> ticket.lastInhabitedTick() < gameTime - 20);
 
             if (set.isEmpty()) {
+                final Ticket vanillaTicket = this.vanillaChunkTickets.remove(chunkLong);
+                if (vanillaTicket != null) {
+                    // ChunkMap.ticketStorage is opened by Sable's access transformer.
+                    level.getChunkSource().chunkMap.ticketStorage.removeTicket(vanillaTicket, ChunkPos.unpack(chunkLong));
+                }
                 forcedChunkIter.remove();
             }
         }

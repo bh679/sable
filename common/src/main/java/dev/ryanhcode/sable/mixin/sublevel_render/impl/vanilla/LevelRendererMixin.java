@@ -71,7 +71,7 @@ public abstract class LevelRendererMixin {
         profiler.push("sub_level_section_occlusion_graph");
 
         final Iterable<ClientSubLevel> sublevels = ((ClientSubLevelContainer) ((SubLevelContainerHolder) this.level).sable$getPlotContainer()).getAllSubLevels();
-        final Vec3 cameraPosition = camera.getPosition();
+        final Vec3 cameraPosition = camera.position();
         dispatcher.updateCulling(sublevels, cameraPosition.x, cameraPosition.y, cameraPosition.z, VeilRenderBridge.create(frustum), isSpectator);
 
         profiler.pop();

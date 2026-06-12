@@ -94,7 +94,7 @@ public abstract class ServerLevelMixin extends Level {
         final SubLevelContainer plotContainer = SubLevelContainer.getContainer((ServerLevel) (Object) this);
         assert plotContainer != null;
 
-        if (plotContainer.getPlot(new ChunkPos(l)) != null) {
+        if (plotContainer.getPlot(ChunkPos.unpack(l)) != null) {
             cir.setReturnValue(true);
         }
     }

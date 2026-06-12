@@ -37,7 +37,7 @@ public class LevelAccelerator implements BlockGetter {
         this.level = level;
         this.minBuildHeight = level.getMinY();
         this.maxBuildHeight = (level.getMaxY() + 1);
-        this.minSection = level.getMinSection();
+        this.minSection = level.getMinSectionY();
     }
 
     public void clearCache() {

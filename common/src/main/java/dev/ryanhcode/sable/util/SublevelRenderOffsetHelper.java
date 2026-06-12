@@ -21,7 +21,7 @@ public class SublevelRenderOffsetHelper {
      */
     public static void posePlotToProjected(final SubLevel subLevel, final PoseStack ps) {
         if (subLevel != null) {
-            final Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            final Vec3 camera = Minecraft.getInstance().gameRenderer.getMainCamera().position();
 
             final Pose3dc pose = ((ClientSubLevel) subLevel).renderPose();
 

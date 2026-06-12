@@ -139,7 +139,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
             Sable.LOGGER.info("Processing unload for chunk {}", chunkPos);
         }
 
-        final BoundingBox3d bounds = new BoundingBox3d(chunkPos.x << 4, -Double.MAX_VALUE, chunkPos.z << 4, (chunkPos.x << 4) + 16, Double.MAX_VALUE, (chunkPos.z << 4) + 16);
+        final BoundingBox3d bounds = new BoundingBox3d(chunkPos.x() << 4, -Double.MAX_VALUE, chunkPos.z() << 4, (chunkPos.x() << 4) + 16, Double.MAX_VALUE, (chunkPos.z() << 4) + 16);
 
         final SubLevelContainer container = SubLevelContainer.getContainer(this.level);
         assert container != null : "Sub-level container is null";
@@ -227,7 +227,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
 
             // We save all intersecting sub-levels in the chain to the first one's chunk
             final Vector3d currentPosition = subLevel.logicalPose().position();
-            final ChunkPos moveToChunk = new ChunkPos(BlockPos.containing(currentPosition.x, currentPosition.y, currentPosition.z));
+            final ChunkPos moveToChunk = ChunkPos.containing(BlockPos.containing(currentPosition.x, currentPosition.y, currentPosition.z));
 
             final Collection<ServerSubLevel> chain = SubLevelHelper.getLoadingDependencyChain(subLevel);
             moved.addAll(chain);
@@ -288,7 +288,7 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
         }
 
         for (final long longKey : this.dirtyHoldingChunks) {
-            final ChunkPos chunkPos = new ChunkPos(longKey);
+            final ChunkPos chunkPos = ChunkPos.unpack(longKey);
 
             final SubLevelHoldingChunk holdingChunk = this.loadedHoldingChunks.get(longKey);
 
@@ -581,11 +581,11 @@ public class SubLevelHoldingChunkMap implements AutoCloseable {
         final Collection<ServerSubLevel> forceLoaded = this.container.collectForceLoadedSubLevels();
 
         for (final long l : this.chunksToUnload) {
-            this.processUnload(new ChunkPos(l), forceLoaded);
+            this.processUnload(ChunkPos.unpack(l), forceLoaded);
         }
 
         for (final long l : this.chunksToLoad) {
-            this.processLoad(new ChunkPos(l));
+            this.processLoad(ChunkPos.unpack(l));
         }
         this.chunksToUnload.clear();
         this.chunksToLoad.clear();

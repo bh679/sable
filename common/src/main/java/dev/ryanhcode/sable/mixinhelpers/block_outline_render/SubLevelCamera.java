@@ -30,7 +30,7 @@ public class SubLevelCamera extends Camera {
 
     public void setPose(@Nullable final Pose3dc pose) {
         if (pose != null) {
-            final Vec3 pos = pose.transformPositionInverse(this.renderCamera.getPosition());
+            final Vec3 pos = pose.transformPositionInverse(this.renderCamera.position());
 
             final Quaternionf rotation = this.rotation();
             this.renderCamera.rotation().mul(this.inverseOrientationf.set(pose.orientation().invert(this.inverseOrientation)), rotation);
@@ -44,7 +44,7 @@ public class SubLevelCamera extends Camera {
             this.getUpVector().set(0.0F, 1.0F, 0.0F).rotate(rotation);
             this.getLeftVector().set(-1.0F, 0.0F, 0.0F).rotate(rotation);
         } else {
-            this.pos = this.renderCamera.getPosition();
+            this.pos = this.renderCamera.position();
             this.blockPosition.set(this.pos.x, this.pos.y, this.pos.z);
             this.rotationYXZ.set(this.renderCamera.getXRot(), this.renderCamera.getYRot(), 0);
 

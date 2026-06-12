@@ -72,10 +72,10 @@ public class SableChunkDebugRenderer {
         }
 
         final ChunkPos ckPos = entity.chunkPosition();
-        final float x = (float) (ckPos.x * 16 - camX);
+        final float x = (float) (ckPos.x() * 16 - camX);
         float y = (float) (minBuildHeight - camY);
         float y1 = (float) (maxBuildHeight - camY);
-        final float z = (float) (ckPos.z * 16 - camZ);
+        final float z = (float) (ckPos.z() * 16 - camZ);
 
         for (int xO = 0; xO < 2; xO++) {
             for (int zO = 0; zO < 2; zO++) {

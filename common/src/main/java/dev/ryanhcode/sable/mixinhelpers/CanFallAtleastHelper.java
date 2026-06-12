@@ -75,10 +75,10 @@ public class CanFallAtleastHelper {
                 while (iterator.hasNext()) {
                     final BoundingBox3dc box = iterator.next();
                     box.center(center);
-                    cubeOBB.getPosition().set(block.getX() + center.x,
+                    cubeOBB.position().set(block.getX() + center.x,
                             block.getY() + center.y,
                             block.getZ() + center.z);
-                    pose.transformPosition(cubeOBB.getPosition());
+                    pose.transformPosition(cubeOBB.position());
                     box.size(cubeOBB.getDimensions());
 
                     OrientedBoundingBox3d.sat(entityBoundsOBB, cubeOBB, satResult);

@@ -57,7 +57,7 @@ public class RenderSectionMixin implements RenderSectionExtension {
         final double x = this.bb.minX + 8.0;
         final double y = this.bb.minY + 8.0;
         final double z = this.bb.minZ + 8.0;
-        return Sable.HELPER.distanceSquaredWithSubLevels(level, camera.getPosition(), x, y, z);
+        return Sable.HELPER.distanceSquaredWithSubLevels(level, camera.position(), x, y, z);
     }
 
     @Override

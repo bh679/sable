@@ -177,7 +177,7 @@ public class PlotChunkHolder extends ChunkHolder {
      * @return the heat section at that section Y
      */
     public @Nullable HeatDataChunkSection getHeatSection(final int y) {
-        final int index = y - this.chunk.getMinSection();
+        final int index = y - this.chunk.getMinSectionY();
 
         if (index < 0 || index >= this.heatSections.length) {
             return null;
@@ -191,7 +191,7 @@ public class PlotChunkHolder extends ChunkHolder {
      * @param section the heat section to set
      */
     public void setHeatSection(final int y, final HeatDataChunkSection section) {
-        final int index = y - this.chunk.getMinSection();
+        final int index = y - this.chunk.getMinSectionY();
 
         if (index < 0 || index >= this.heatSections.length) {
             return;

@@ -23,11 +23,13 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 
 ## Status
 
-- [x] Toolchain bump (Gradle config evaluates clean)
+- [x] Toolchain bump (NeoForm 26.1.2 pipeline + JDK 25 provisioning verified working)
 - [x] Compat strip
-- [ ] **Common module compiles** ← current
-- [ ] De-Veil: networking (PacketContext → NeoForge `IPayloadContext` shim)
-- [ ] De-Veil: render (delete `sublevel/render/fancy`, de-Veil vanilla dispatcher + water occlusion / sky-light shadow / dynamic shade)
+- [x] De-Veil: networking (`SablePacketContext`/`SablePacketSink` shims; declarative `SableTCPPackets` + NeoForge `RegisterPayloadHandlersEvent` registration)
+- [x] De-Veil: render features deleted (fancy path, dynamic shading, sky-light shadows, water occlusion, ImGui gizmo/inspector, sodium reach-around)
+- [x] De-Veil: registries (`SableRegistrationProvider` shim), mixin plugin (`SableLoaderPlatform.isModLoaded`)
+- [x] Mechanical 26.1 renames (Identifier, ChunkPos record, NBT Optional API, isClientSide(), height accessors, Profiler.get(), RenderType/BlockAndTintGetter moves)
+- [ ] **Common module compiles** ← current (remaining: chunk-render data + render mixins on the 26.1 pipeline, per-site stragglers)
 - [ ] NeoForge module compiles
 - [ ] Rust natives build via fork CI (`.github/workflows`, MC-version-agnostic)
 - [ ] runClient boots; plot assembles and moves
@@ -36,9 +38,32 @@ Licence: PolyForm Shield 1.0.0 (unchanged, `LICENSE.md`).
 
 ## Error-wall trajectory (`./gradlew :common:compileJava`)
 
-| Pass | Errors | Notes |
-|------|--------|-------|
-| 0 | (pending) | first attempt after toolchain+strip |
+| Pass | Errors | What changed before it |
+|------|--------|------------------------|
+| 1 | 1212 | toolchain bump + compat strip only |
+| 2 | 529 | de-Veil (networking/registries/render features) + bulk renames (Identifier, NBT Optional API, ChunkPos pack/unpack, …) |
+| 3 | 413 | line-targeted ChunkPos record accessors/ctors, misc renames |
+| 4 | 393 | ticket-system rewrite (TicketStorage/registered TicketType), wave-3 renames (sections, registry lookup, camera position(), AbstractArrow move) |
+
+## Remaining work (next session)
+
+**Render cluster (~80 errors)** — needs the 26.1 architecture, mapped as follows:
+- Chunk layers: `RenderType` → **`ChunkSectionLayer`** enum (`client.renderer.chunk`); draws go through `SectionMesh`/`CompiledSectionMesh` + `ChunkSectionsToRender` (GpuBuffer/RenderPass world, no more ShaderInstance/Uniform/VertexBuffer).
+- `SectionRenderDispatcher` + `RenderRegionCache` still exist; `RenderChunkRegion` → `RenderSectionRegion`; compiled-section API now `SectionMesh`.
+- Files: `sublevel/render/vanilla/VanillaChunkedSubLevelRenderData` (28), `mixinhelpers/block_outline_render/SubLevelCamera` (18), `mixin/sublevel_render/impl/vanilla/LevelRendererMixin` (13), `SimpleCulledRenderRegion` (8), `mixin/entity/entity_rendering/EntityRendererMixin` (8), `mixin/debug_render/LevelRendererMixin` (7), `VanillaSingleSubLevelRenderData`, `SubLevelRenderData` interface (compileSections signature), `LightTexture`→`Lightmap` call sites (~16), `DebugRenderer.renderLineBox`→`ShapeRenderer.renderLineBox`.
+- Interface change already staged: `SubLevelRenderDispatcher.renderSectionLayer` lost the ShaderInstance param; switch its `RenderType` to `ChunkSectionLayer` while porting.
+
+**Plot/chunk core (~50)** — `ServerLevelPlot` (26), `SubLevelHoldingChunkMap` (12), `EmbeddedPlotLevelAccessor` (6), `mixin/plot/ServerChunkCacheMixin` (7): ChunkHolder future/API drift (`getTimer`, ChunkHolder futures renamed), `ChunkProgressListener` changes, `onBlockStateChange` signature.
+
+**Long tail (~260)** — per-site: commands (`SableSpawnCommands` 12, suggestion/argument API), `SubLevelAssemblyHelper` (9), entity collision (7, `lerpTo` signature, `is(TagKey)`), `respawn_point` mixins (RespawnConfig rework), 4 player mixins (Player ctor signature), Optional unwraps from the NBT sweep (~15), `toLong()` leftovers (12, mostly SectionPos/ColumnPos receivers — verify each), `getTimer()` (11, DeltaTracker rework), fastutil `Strategy` imports (4).
+
+**Then:** neoforge module (~10 expected: SableNeoForge glue compiles against ported common), gametest module check, AT audit for renamed targets (`ChunkHolder` futures, `LevelRenderer.cullingFrustum`, `Particle` fields, `RenderStateShard.name`), `architectury.common.json`/`sable.accesswidener` cleanup, natives CI on the fork, runClient smoke.
+
+## Reference tooling (established this session)
+
+- 26.1.2 compiled+sources jar (API bible): `~/.gradle/caches/neoformruntime/intermediate_results/mergeWithSources_6fbfc7ada1d9d9535f752d6ecbd648001fc0d25b_output.jar` — `unzip -p $JAR net/minecraft/path/Class.java` to read any vanilla source.
+- Full 26.1.2 class index: `/tmp/mc26-classes.txt` (regenerate: `unzip -l $JAR | grep '\.class$' | sed 's/\.class$//; s|/|.|g'`).
+- Compile logs: `/tmp/sable-compile-N.log`; bucket with `grep ': error:' | cut -d: -f1 | sort | uniq -c | sort -rn`.
 
 ## Key migration references
 

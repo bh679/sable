@@ -44,9 +44,9 @@ public class LevelRendererMixin {
         final MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
         final VertexConsumer consumer = bufferSource.getBuffer(RenderType.LINES);
 
-        final double cx = camera.getPosition().x;
-        final double cy = camera.getPosition().y;
-        final double cz = camera.getPosition().z;
+        final double cx = camera.position().x;
+        final double cy = camera.position().y;
+        final double cz = camera.position().z;
 
         final PoseStack ps = new PoseStack();
         ps.mulPose(matrix4f);

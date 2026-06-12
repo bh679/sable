@@ -121,7 +121,7 @@ public class ServerLevelPlot extends LevelPlot {
      * Logs loading errors for a plot chunk section
      */
     private static void logLoadingErrors(final ChunkPos chunkPos, final int y, final String errorText) {
-        Sable.LOGGER.error("Recoverable errors when loading plot section [{}, {}, {}]: {}", chunkPos.x, y, chunkPos.z, errorText);
+        Sable.LOGGER.error("Recoverable errors when loading plot section [{}, {}, {}]: {}", chunkPos.x(), y, chunkPos.z(), errorText);
     }
 
     /**
@@ -167,7 +167,7 @@ public class ServerLevelPlot extends LevelPlot {
             this.lightEngine.queueSectionData(LightLayer.SKY, SectionPos.of(pos, idx), null);
         }
 
-        for (int idx = serverLevel.getMinSection(); idx < serverLevel.getMaxSection(); idx++) {
+        for (int idx = serverLevel.getMinSectionY(); idx < serverLevel.getMaxSectionY(); idx++) {
             this.lightEngine.updateSectionStatus(SectionPos.of(pos, idx), true);
         }
 
@@ -322,7 +322,7 @@ public class ServerLevelPlot extends LevelPlot {
         final LevelChunkSection[] sections = new LevelChunkSection[sectionCount];
 
         for (int i = 0; i < sectionCount; ++i) {
-            sections[i] = new LevelChunkSection(level.registryAccess().registryOrThrow(Registries.BIOME));
+            sections[i] = new LevelChunkSection(level.registryAccess().lookupOrThrow(Registries.BIOME));
         }
 
         final LevelChunk chunk = new LevelChunk(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, sections, null, null);
@@ -334,8 +334,8 @@ public class ServerLevelPlot extends LevelPlot {
      */
     public CompoundTag save() {
         final CompoundTag tag = new CompoundTag();
-        tag.putInt("plot_x", this.plotPos.x - this.container.getOrigin().x);
-        tag.putInt("plot_z", this.plotPos.z - this.container.getOrigin().y);
+        tag.putInt("plot_x", this.plotPos.x() - this.container.getOrigin().x());
+        tag.putInt("plot_z", this.plotPos.z() - this.container.getOrigin().y);
         tag.putInt("log_size", this.logSize);
         tag.putString("biome", this.biome.location().toString());
         tag.putInt("data_version", DATA_VERSION);
@@ -409,7 +409,7 @@ public class ServerLevelPlot extends LevelPlot {
             SablePlotPlatform.INSTANCE.writeLightData(tag, level.registryAccess(), chunk);
             SablePlotPlatform.INSTANCE.writeChunkAttachments(tag, level.registryAccess(), chunk);
 
-            chunks.put(String.valueOf(ChunkPos.pack(local.x, local.z)), chunkTag);
+            chunks.put(String.valueOf(ChunkPos.pack(local.x(), local.z())), chunkTag);
         }
 
         tag.put("chunks", chunks);
@@ -467,18 +467,18 @@ public class ServerLevelPlot extends LevelPlot {
                 final CompoundTag sectionTag = sectionsTag.getCompoundOrEmpty(sectionKey);
 
                 palettedContainer = BLOCK_STATE_CODEC.parse(NbtOps.INSTANCE, sectionTag.getCompoundOrEmpty("block_states"))
-                        .promotePartial(string -> logLoadingErrors(new ChunkPos(chunkPos), chunk.getSectionYFromSectionIndex(yIndex), string))
+                        .promotePartial(string -> logLoadingErrors(ChunkPos.containing(chunkPos), chunk.getSectionYFromSectionIndex(yIndex), string))
                         .getOrThrow(ChunkSerializer.ChunkReadException::new);
 
-                final Registry<Biome> biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
+                final Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
                 final PalettedContainer<Holder<Biome>> biomeContainer = new PalettedContainer<>(biomeRegistry.asHolderIdMap(), biomeRegistry.getHolderOrThrow(this.biome), PalettedContainer.Strategy.SECTION_BIOMES);
 
                 sections[yIndex] = new LevelChunkSection(palettedContainer, biomeContainer);
 
                 final SectionPos sectionPos = SectionPos.of(global, level.getSectionYFromSectionIndex(yIndex));
 
-                final boolean hasBlockLight = this.lightEngine.blockEngine != null && sectionTag.contains("BlockLight", Tag.TAG_BYTE_ARRAY);
-                final boolean hasSkyLight = this.lightEngine.skyEngine != null && level.dimensionType().hasSkyLight() && sectionTag.contains("SkyLight", Tag.TAG_BYTE_ARRAY);
+                final boolean hasBlockLight = this.lightEngine.blockEngine != null && sectionTag.contains("BlockLight");
+                final boolean hasSkyLight = this.lightEngine.skyEngine != null && level.dimensionType().hasSkyLight() && sectionTag.contains("SkyLight");
                 if (hasBlockLight || hasSkyLight) {
                     if (!hasLit) {
                         this.lightEngine.retainData(global, true);
@@ -513,7 +513,7 @@ public class ServerLevelPlot extends LevelPlot {
 
                 for (final Heightmap.Types heightMapType : chunk.getPersistedStatus().heightmapsAfter()) {
                     final String heightMapKey = heightMapType.getSerializationKey();
-                    if (heightMapsTag.contains(heightMapKey, Tag.TAG_LONG_ARRAY)) {
+                    if (heightMapsTag.contains(heightMapKey)) {
                         chunk.setHeightmap(heightMapType, heightMapsTag.getLongArray(heightMapKey));
                     } else {
                         enumset.add(heightMapType);
@@ -643,8 +643,8 @@ public class ServerLevelPlot extends LevelPlot {
                 final LevelChunkSection section = levelChunkSections[i];
                 if (!section.hasOnlyAir()) {
                     final int sectionY = chunk.getSectionYFromSectionIndex(i);
-                    physicsSystem.getTicketManager().addTicketForSection(level, SectionPos.of(global.x, sectionY, global.z));
-                    physicsSystem.getPipeline().handleChunkSectionAddition(section, global.x, sectionY, global.z, true);
+                    physicsSystem.getTicketManager().addTicketForSection(level, SectionPos.of(global.x(), sectionY, global.z()));
+                    physicsSystem.getPipeline().handleChunkSectionAddition(section, global.x(), sectionY, global.z(), true);
                 }
             }
         }

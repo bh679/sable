@@ -45,7 +45,7 @@ public class ServerChunkCacheMixin {
     public void init(final ServerLevel serverLevel, final LevelStorageSource.LevelStorageAccess levelStorageAccess, final DataFixer dataFixer, final StructureTemplateManager structureTemplateManager,
                      final Executor executor, final ChunkGenerator chunkGenerator, final int i, final int j, final boolean bl, final ChunkProgressListener chunkProgressListener,
                      final ChunkStatusUpdateListener chunkStatusUpdateListener, final Supplier supplier, final CallbackInfo ci) {
-        this.sable$emptyChunk = new EmptyLevelChunk(serverLevel, new ChunkPos(0, 0), serverLevel.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS));
+        this.sable$emptyChunk = new EmptyLevelChunk(serverLevel, new ChunkPos(0, 0), serverLevel.registryAccess().lookupOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS));
     }
 
     @Unique
@@ -109,7 +109,7 @@ public class ServerChunkCacheMixin {
     private void isPositionTicking(final long pos, final CallbackInfoReturnable<Boolean> cir) {
         final SubLevelContainer container = this.sable$getPlotContainer();
         if (container.inBounds(ChunkPos.getX(pos), ChunkPos.getZ(pos))) {
-            final ChunkPos chunkPos = new ChunkPos(pos);
+            final ChunkPos chunkPos = ChunkPos.containing(pos);
             final LevelChunk chunk = container.getChunk(chunkPos);
 
             cir.setReturnValue(chunk != null);
@@ -120,7 +120,7 @@ public class ServerChunkCacheMixin {
     private void getFullChunk(final long pos, final Consumer<LevelChunk> consumer, final CallbackInfo ci) {
         final SubLevelContainer container = this.sable$getPlotContainer();
         if (container.inBounds(ChunkPos.getX(pos), ChunkPos.getZ(pos))) {
-            final ChunkPos chunkPos = new ChunkPos(pos);
+            final ChunkPos chunkPos = ChunkPos.containing(pos);
             final LevelChunk chunk = container.getChunk(chunkPos);
 
             if (chunk != null) {
@@ -135,7 +135,7 @@ public class ServerChunkCacheMixin {
     private void blockChanged(final BlockPos blockPos, final CallbackInfo ci) {
         final SubLevelContainer container = this.sable$getPlotContainer();
 
-        final ChunkPos pos = new ChunkPos(blockPos);
+        final ChunkPos pos = ChunkPos.containing(blockPos);
         if (container.inBounds(pos)) {
             final PlotChunkHolder holder = container.getChunkHolder(pos);
 

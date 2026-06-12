@@ -38,7 +38,7 @@ public class LevelRendererMixin {
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/DimensionSpecialEffects;constantAmbientLight()Z", ordinal = 0, shift = At.Shift.BEFORE))
     private void sable$renderSingleBlockSubLevels(final DeltaTracker deltaTracker, final boolean bl, final Camera camera, final GameRenderer gameRenderer, final LightTexture lightTexture, final Matrix4f modelView, final Matrix4f projection, final CallbackInfo ci) {
         final Iterable<ClientSubLevel> sublevels = ((ClientSubLevelContainer) ((SubLevelContainerHolder) this.level).sable$getPlotContainer()).getAllSubLevels();
-        final Vec3 cameraPosition = camera.getPosition();
+        final Vec3 cameraPosition = camera.position();
         SubLevelRenderDispatcher.get().renderAfterSections(sublevels, cameraPosition.x, cameraPosition.y, cameraPosition.z, modelView, projection, deltaTracker.getGameTimeDeltaPartialTick(false));
     }
 

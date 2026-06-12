@@ -71,7 +71,7 @@ public class LevelRendererMixin {
         }
 
         final BlockEntityRenderDispatcherExtension extension = (BlockEntityRenderDispatcherExtension) this.blockEntityRenderDispatcher;
-        final Vec3 cameraPosition = camera.getPosition();
+        final Vec3 cameraPosition = camera.position();
         final BlockPos blockPos = blockEntity.getBlockPos();
 
         poseStack.pushPose();
@@ -96,7 +96,7 @@ public class LevelRendererMixin {
     @Inject(method = "renderLevel", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/LevelRenderer;globalBlockEntities:Ljava/util/Set;", shift = At.Shift.BEFORE, ordinal = 0))
     public void sable$preRenderBEs(final DeltaTracker deltaTracker, final boolean bl, final Camera camera, final GameRenderer gameRenderer, final LightTexture lightTexture, final Matrix4f matrix4f, final Matrix4f matrix4f2, final CallbackInfo ci) {
         final List<ClientSubLevel> subLevels = SubLevelContainer.getContainer(this.level).getAllSubLevels();
-        final Vec3 cameraPosition = camera.getPosition();
+        final Vec3 cameraPosition = camera.position();
         SubLevelRenderDispatcher.get().renderBlockEntities(subLevels, this.sable$subLevelBlockEntityRenderer, cameraPosition.x, cameraPosition.y, cameraPosition.z, deltaTracker.getGameTimeDeltaPartialTick(false));
     }
 }
