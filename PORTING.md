@@ -1,6 +1,7 @@
 # Sable → MC 26.1.2 Port (unofficial, Dungeon Train)
 
-Working branch: `port/mc26.1` · Upstream: [ryanhcode/sable](https://github.com/ryanhcode/sable) (1.21.1)
+Working branch: `port/mc26.1` (fork default branch — `main` stays the pristine upstream
+baseline `48f5c24` for diffing) · Upstream: [ryanhcode/sable](https://github.com/ryanhcode/sable) (1.21.1)
 Target: **Minecraft 26.1.2 / NeoForge 26.1.2.75 / Java 25** · Started 2026-06-12
 
 This fork exists because [Dungeon Train](https://github.com/bh679/dungeon-train-mc) needs
