@@ -32,7 +32,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/common/build/cargo
           key: ${{ runner.os }}-node-${{ hashFiles('common/src/main/rust/**/Cargo.lock') }}
@@ -49,4 +49,6 @@ jobs:
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add .
           git commit -m "Automated build rust natives" || echo "No changes to commit"
-          git push
+          # Rebase in case the branch moved while the natives were building.
+          git pull --rebase origin ${{ github.ref_name }}
+          git push origin HEAD:${{ github.ref_name }}
