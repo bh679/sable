@@ -21,7 +21,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
+import net.neoforged.neoforge.event.AddServerReloadListenersEvent;
 import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -58,10 +58,11 @@ public final class SableNeoForge {
         CrashReportCallables.registerHeader(Sable::getCrashHeader);
     }
 
-    public void registerReloadListeners(final AddReloadListenerEvent event) {
-        event.addListener(PhysicsBlockPropertiesDefinitionLoader.INSTANCE);
-        event.addListener(DimensionPhysicsData.ReloadListener.INSTANCE);
-        event.addListener(FloatingBlockMaterialDataHandler.ReloadListener.INSTANCE);
+    public void registerReloadListeners(final AddServerReloadListenersEvent event) {
+        // mc26.1: server reload listeners are registered with an Identifier key.
+        event.addListener(Sable.sablePath("physics_block_properties"), PhysicsBlockPropertiesDefinitionLoader.INSTANCE);
+        event.addListener(Sable.sablePath("dimension_physics"), DimensionPhysicsData.ReloadListener.INSTANCE);
+        event.addListener(Sable.sablePath("floating_block_materials"), FloatingBlockMaterialDataHandler.ReloadListener.INSTANCE);
     }
 
     private void serverSetup(final FMLCommonSetupEvent event) {

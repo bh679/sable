@@ -11,12 +11,10 @@
         "block_entity_visible.LevelRendererMixin",
         "block_outline_render.LevelRendererMixin",
         "camera_rotation.CameraMixin",
-        "dynamic_directional_shading.SectionCompilerMixin",
         "sound.MovingSoundInstanceDelegateMixin"
     ],
     "mixins": [
-        "entities_stick_sublevels.effects.LivingEntityMixin",
-        "entity.entity_swimming.EntityMixin"
+        "entities_stick_sublevels.effects.LivingEntityMixin"
     ],
     "injectors": {
         "defaultRequire": 1

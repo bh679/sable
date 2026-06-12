@@ -88,7 +88,7 @@ public abstract class CameraMixin {
 
     @Inject(method = "setRotation(FFF)V", at = @At(value = "INVOKE", target = "Lorg/joml/Quaternionf;rotationYXZ(FFF)Lorg/joml/Quaternionf;", shift = At.Shift.AFTER))
     public void sable$rotateView(final float f, final float g, final float roll, final CallbackInfo ci) {
-        final float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        final float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true);
         final Quaterniond ridingOrientation = EntitySubLevelRotationHelper.getEntityOrientation(this.entity, (x) -> ((ClientSubLevel) x).renderPose(), pt, EntitySubLevelRotationHelper.Type.CAMERA);
 
         if (ridingOrientation != null) {

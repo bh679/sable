@@ -48,6 +48,11 @@ neoForge {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// PORT-TODO(mc26.1): the game-test framework was overhauled in 26.1 (test
+// environments / data-driven registration). Sable's game tests are excluded
+// from compilation until they are ported — runClient/production unaffected.
+sourceSets.main.java { exclude 'dev/ryanhcode/sable/neoforge/gametest/**' }
+
 repositories {
     mavenLocal()
 

@@ -64,8 +64,8 @@ public abstract class LevelRendererMixin {
 
         this.sable$sublevelCamera.setCamera(camera);
         this.sable$sublevelCamera.setPose(pose);
-        final Vec3 cameraPosition = this.sable$sublevelCamera.getPosition();
-        final Vec3 realCameraPosition = camera.getPosition();
+        final Vec3 cameraPosition = this.sable$sublevelCamera.position();
+        final Vec3 realCameraPosition = camera.position();
 
         final Vector3dc position = pose.position();
         final Vector3dc rotationPoint = pose.rotationPoint();
@@ -99,16 +99,16 @@ public abstract class LevelRendererMixin {
 
     @ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"), index = 3)
     public double modifyX(final double original, @Share("drawn") final LocalBooleanRef drawnRef) {
-        return drawnRef.get() ? this.sable$sublevelCamera.getPosition().x : original;
+        return drawnRef.get() ? this.sable$sublevelCamera.position().x : original;
     }
 
     @ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"), index = 4)
     public double modifyY(final double original, @Share("drawn") final LocalBooleanRef drawnRef) {
-        return drawnRef.get() ? this.sable$sublevelCamera.getPosition().y : original;
+        return drawnRef.get() ? this.sable$sublevelCamera.position().y : original;
     }
 
     @ModifyArg(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/LevelRenderer;renderHitOutline(Lcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;Lnet/minecraft/world/entity/Entity;DDDLnet/minecraft/core/BlockPos;Lnet/minecraft/world/level/block/state/BlockState;)V"), index = 5)
     public double modifyZ(final double original, @Share("drawn") final LocalBooleanRef drawnRef) {
-        return drawnRef.get() ? this.sable$sublevelCamera.getPosition().z : original;
+        return drawnRef.get() ? this.sable$sublevelCamera.position().z : original;
     }
 }

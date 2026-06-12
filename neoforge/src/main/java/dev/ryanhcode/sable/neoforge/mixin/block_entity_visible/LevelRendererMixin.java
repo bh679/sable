@@ -23,7 +23,7 @@ public class LevelRendererMixin {
     @SuppressWarnings("unchecked")
     @Redirect(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/neoforged/neoforge/client/ClientHooks;isBlockEntityRendererVisible(Lnet/minecraft/client/renderer/blockentity/BlockEntityRenderDispatcher;Lnet/minecraft/world/level/block/entity/BlockEntity;Lnet/minecraft/client/renderer/culling/Frustum;)Z"), require = 0)
     private static <T extends BlockEntity> boolean isBlockEntityRendererVisible(final BlockEntityRenderDispatcher dispatcher, final BlockEntity blockEntity, final Frustum frustum) {
-        final BlockEntityRenderer<T> renderer = (BlockEntityRenderer<T>) dispatcher.getRenderer(blockEntity);
+        final BlockEntityRenderer<T, ?> renderer = (BlockEntityRenderer<T, ?>) dispatcher.getRenderer(blockEntity);
 
         if (renderer == null) return false;
 

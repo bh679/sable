@@ -12,7 +12,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(value = Sable.MOD_ID, dist = Dist.CLIENT)
@@ -31,6 +31,10 @@ public final class SableNeoForgeClient {
                 FloatingBlockMaterialDataHandler.clearMaterials();
             }
         });
-        modBus.<RegisterClientReloadListenersEvent>addListener(event -> event.registerReloadListener((arg, arg2, arg3, arg4, executor, executor2) -> SubLevelRenderDispatcher.get().reload(arg, arg2, arg3, arg4, executor, executor2)));
+        // mc26.1: client reload listeners are keyed by Identifier and the
+        // PreparableReloadListener signature changed to (SharedState, Executor,
+        // PreparationBarrier, Executor).
+        modBus.<AddClientReloadListenersEvent>addListener(event -> event.addListener(Sable.sablePath("sub_level_renderer"),
+                (currentReload, taskExecutor, preparationBarrier, reloadExecutor) -> SubLevelRenderDispatcher.get().reload(currentReload, taskExecutor, preparationBarrier, reloadExecutor)));
     }
 }
