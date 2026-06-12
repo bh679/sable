@@ -214,10 +214,7 @@ neoForge {
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
-    parchment {
-        minecraftVersion = parchment_minecraft
-        mappingsVersion = parchment_version
-    }
+    // Parchment removed: no 26.1 mappings exist, and 26.1+ ships deobfuscated.
 }
 
 configurations {
@@ -245,16 +242,11 @@ dependencies {
 
     implementation "org.apache.maven:maven-artifact:3.8.5"
 
-    api "dev.ryanhcode.sable-companion:sable-companion-common-$minecraft_version:$sable_companion_version"
+    // Companion artifact name is pinned to its own MC suffix (pure math lib,
+    // no Minecraft imports) — see sable_companion_mc in gradle.properties.
+    api "dev.ryanhcode.sable-companion:sable-companion-common-$sable_companion_mc:$sable_companion_version"
 
-    implementation("foundry.veil:veil-common-${project.minecraft_version}:${project.veil_version}") {
-        exclude group: "maven.modrinth"
-    }
-    compileOnly("foundry.imguimc:imguimc-common-${project.minecraft_version}:${project.imguimc_version}")
-
-    compileOnly("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forgeconfigapiport_version}") {
-        transitive = false
-    }
+    // Veil + imguimc removed on the port branch: no 26.1 builds exist.
 
     implementation "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forgeconfigapiport_version}"
     //source: https://github.com/Fuzss/forgeconfigapiport

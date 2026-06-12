@@ -11,10 +11,7 @@ neoForge {
     if (at.exists()) {
         accessTransformers.from(at.absolutePath)
     }
-    parchment {
-        minecraftVersion = parchment_minecraft
-        mappingsVersion = parchment_version
-    }
+    // Parchment removed: no 26.1 mappings exist, and 26.1+ ships deobfuscated.
     runs {
         configureEach {
             systemProperty("neoforge.enabledGameTestNamespaces", mod_id.toString())
@@ -58,41 +55,19 @@ repositories {
         name = 'NeoForged'
         url = 'https://maven.neoforged.net/releases'
     }
-
-    maven {
-        name = "Mortuusars Github Maven"
-        url = "https://raw.githubusercontent.com/mortuusars/resources/main/maven/"
-    }
 }
 
 dependencies {
-    jarJar(api("dev.ryanhcode.sable-companion:sable-companion-common-${project.minecraft_version}:[${project.sable_companion_version},)")) {
+    // Companion artifact name is pinned to its own MC suffix (pure math lib,
+    // no Minecraft imports) — see sable_companion_mc in gradle.properties.
+    jarJar(api("dev.ryanhcode.sable-companion:sable-companion-common-${project.sable_companion_mc}:[${project.sable_companion_version},)")) {
         version {
             prefer project.sable_companion_version
         }
     }
 
-    compileOnly "maven.modrinth:distanthorizons:$rootProject.distant_horizons_version"
-    compileOnly "maven.modrinth:backpacks-for-dummies:$rootProject.backpacks_for_dummies_version"
-
-    implementation("com.simibubi.create:create-${minecraft_version}:${create_version}") { transitive = false }
-    implementation("net.createmod.ponder:ponder-neoforge:${ponder_version}+mc${minecraft_version}")
-    compileOnly("dev.engine-room.flywheel:flywheel-neoforge-api-${minecraft_version}:${flywheel_version}")
-    implementation("dev.engine-room.flywheel:flywheel-neoforge-${minecraft_version}:${flywheel_version}")
-    implementation("com.tterrag.registrate:Registrate:${registrate_version}")
-
-    compileOnly("maven.modrinth:protomanlys-weather:${pmweather_version}")
-    compileOnly("io.github.mortuusars.exposure:exposure-${minecraft_version}-neoforge:${exposure_version}") { transitive = false }
-    compileOnly("maven.modrinth:jade:${project.jade_version}+neoforge") { transitive = false }
-    compileOnly("maven.modrinth:jade-addons-forge:${project.jade_addons_version}+neoforge") { transitive = false }
-
-    compileOnly "net.caffeinemc:sodium-neoforge-mod:${sodium_version}"
-    compileOnly("maven.modrinth:iris:$iris_version") { transitive = false }
-    compileOnly("maven.modrinth:sodium-extras:neoforge-${minecraft_version}-$sodiumextras_version") { transitive = false }
-
-    jarJar(api("foundry.veil:veil-neoforge-${project.minecraft_version}:${project.veil_version}") {
-        exclude group: "maven.modrinth"
-        exclude group: "me.fallenbreath"
-    })
-    compileOnly("foundry.imguimc:imguimc-neoforge-${project.minecraft_version}:${project.imguimc_version}")
+    // All compat-mod dependencies (Create/Ponder/Flywheel/Registrate/Sodium/
+    // Iris/Jade/Exposure/PMWeather/DistantHorizons/Backpacks) and Veil/imguimc
+    // removed on the port branch — no 26.1 builds exist upstream. The matching
+    // compat sources and mixin entries are deleted alongside.
 }
