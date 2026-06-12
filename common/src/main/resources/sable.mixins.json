@@ -16,6 +16,7 @@
         "camera.new_camera_types.MinecraftMixin",
         "clip_overwrite.ClientLevelMixin",
         "clip_overwrite.GameRendererMixin",
+        "clip_overwrite.LocalPlayerMixin",
         "entity.entities_stick_sublevels.ClientPacketListenerMixin",
         "entity.entities_stick_sublevels.EntityRenderDispatcherMixin",
         "entity.entities_stick_sublevels.effects.LocalPlayerMixin",

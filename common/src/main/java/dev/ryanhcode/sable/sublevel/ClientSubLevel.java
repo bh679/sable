@@ -1,5 +1,6 @@
 package dev.ryanhcode.sable.sublevel;
 
+import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.sublevel.ClientSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.ClientSubLevelAccess;
@@ -74,6 +75,9 @@ public class ClientSubLevel extends SubLevel implements ClientSubLevelAccess {
      */
     private float lastRenderPosePartialTick = -1;
 
+    // TODO(port-debug): remove [POSE-DBG] rate-limit counter once client pose corruption is fixed
+    private static int sable$dbgRenderPoseLogCounter;
+
     /**
      * Flywheel lighting scene ID
      */
@@ -128,6 +132,13 @@ public class ClientSubLevel extends SubLevel implements ClientSubLevelAccess {
         assert container != null;
         this.interpolator.tick(container.getInterpolation().getTickPointer());
         final Pose3dc interpolatedPose = this.interpolator.getInterpolatedPose();
+
+        // TODO(port-debug): remove [POSE-DBG] logging once client pose corruption is fixed
+        Sable.LOGGER.info("[POSE-DBG] CLIENT-INTERP pointer={} bufSize={} bufTicks=[{}..{}] out={}",
+                container.getInterpolation().getTickPointer(), this.interpolator.buffer.size(),
+                this.interpolator.buffer.isEmpty() ? -1 : this.interpolator.buffer.getFirst().gameTick(),
+                this.interpolator.buffer.isEmpty() ? -1 : this.interpolator.buffer.getLast().gameTick(),
+                dev.ryanhcode.sable.sublevel.system.SubLevelTrackingSystem.sable$dbgPose(interpolatedPose));
 
         logicalPose.set(interpolatedPose);
 
@@ -324,6 +335,14 @@ public class ClientSubLevel extends SubLevel implements ClientSubLevelAccess {
         renderPose.orientation().slerp(target.orientation(), pt);
         renderPose.rotationPoint().lerp(target.rotationPoint(), pt);
         renderPose.scale().lerp(target.scale(), pt);
+
+        // TODO(port-debug): remove [POSE-DBG] logging once client pose corruption is fixed
+        if (renderPose.position().lengthSquared() > 1.0e8 && (sable$dbgRenderPoseLogCounter++ & 31) == 0) {
+            Sable.LOGGER.info("[POSE-DBG] RENDER-POSE-GARBAGE pt={} last={} target={}",
+                    pt,
+                    dev.ryanhcode.sable.sublevel.system.SubLevelTrackingSystem.sable$dbgPose(this.lastPose()),
+                    dev.ryanhcode.sable.sublevel.system.SubLevelTrackingSystem.sable$dbgPose(target));
+        }
 
         return renderPose;
     }

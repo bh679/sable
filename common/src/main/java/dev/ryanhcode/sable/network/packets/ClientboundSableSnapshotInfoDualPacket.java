@@ -63,6 +63,10 @@ public final class ClientboundSableSnapshotInfoDualPacket implements SableUDPPac
             return;
         }
 
+        // TODO(port-debug): remove [POSE-DBG] logging once client pose corruption is fixed
+        Sable.LOGGER.info("[POSE-DBG] CLIENT-RECV-INFO msSinceLast={} gameTick={} stopped={}",
+                this.msSinceLast, this.gameTick, this.stopped);
+
         ((ClientSubLevelContainer) container).getInterpolation()
                 .receiveInfo(this.msSinceLast, this.gameTick, this.stopped);
     }

@@ -76,6 +76,10 @@ public class VanillaSubLevelRenderDispatcher implements SubLevelRenderDispatcher
 
     @Override
     public SubLevelRenderData createRenderData(final ClientSubLevel subLevel) {
+        // TODO(port-debug): remove [RENDER-DBG] logging once plot invisibility is fixed
+        dev.ryanhcode.sable.Sable.LOGGER.info("[RENDER-DBG] createRenderData plot={} singleBlock={} bounds={}",
+                subLevel.getPlot().plotPos, isSingleBlock(subLevel), subLevel.getPlot().getBoundingBox());
+
         if (isSingleBlock(subLevel)) {
             return new VanillaSingleSubLevelRenderData(subLevel);
         }

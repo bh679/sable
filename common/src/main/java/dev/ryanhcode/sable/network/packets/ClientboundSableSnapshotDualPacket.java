@@ -108,6 +108,11 @@ public final class ClientboundSableSnapshotDualPacket implements SableUDPPacket,
                 continue;
             }
 
+            // TODO(port-debug): remove [POSE-DBG] logging once client pose corruption is fixed
+            Sable.LOGGER.info("[POSE-DBG] CLIENT-RECV mode={} tick={} plot={} pose={}",
+                    packetReceiveMode, this.interpolationTick, entry.plotCoordinate,
+                    dev.ryanhcode.sable.sublevel.system.SubLevelTrackingSystem.sable$dbgPose(entry.pose));
+
             ((ClientSubLevelContainer) container).getInterpolation()
                     .receiveSnapshot(clientSubLevel, this.interpolationTick, entry.pose, packetReceiveMode);
         }
