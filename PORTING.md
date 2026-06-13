@@ -129,7 +129,10 @@ multiplayer), game tests.
   yet (manual `workflow_dispatch` works); re-check after a few completed runs.
 - [x] runClient boots; plot assembles, moves, renders, persists (2026-06-13)
 - [x] Save/quit clean — verified across quit-to-title/rejoin cycles (upstream #679 PlotChunkHolder shutdown-leak audit still pending)
-- [ ] GitHub Release `sable-neoforge-*+mc26.1.2`
+- [x] GitHub Release (2026-06-13): [`mc26.1.2-1.3.0-dt.1-neoforge`](https://github.com/bh679/sable/releases/tag/mc26.1.2-1.3.0-dt.1-neoforge)
+  — pre-release (BETA while dormant features remain), jar with fork-built natives attached;
+  publish pipeline is GitHub-only on bh679/sable (upstream CF/Modrinth/Discord targets removed
+  — unofficial ports don't publish to upstream's listings), dry-runs when GITHUB_TOKEN unset.
 
 ## Error-wall trajectory (`./gradlew :common:compileJava`)
 
