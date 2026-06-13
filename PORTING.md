@@ -120,7 +120,13 @@ fluid-extension API removed), scroll zoom, anti-cheat creative check
 (`entity_sublevel_collision.ServerGamePacketListenerImplMixin` — affects moving-plot
 rubber-banding, HIGH priority), teleport-packet plot data (codec rework needed,
 multiplayer), game tests.
-- [ ] Rust natives build via fork CI (`.github/workflows`, MC-version-agnostic)
+- [x] Rust natives build via fork CI (2026-06-13: `Build Rust Natives` green on the fork —
+  Java 25, six cross-targets via zigbuild/xwin docker, auto-commit rebased before push;
+  rebuilt zip byte-equivalent to upstream's modulo zip timestamps. The compile/assemble
+  check (`build`) is also green on a fresh runner — it caught a stale AT entry
+  (`RespawnPosAngle` 2-arg → 3-arg ctor) that local moddev caches masked, validating
+  fresh-CI as the guard for AT rot. Quirk: push-event triggers don't fire on this fork
+  yet (manual `workflow_dispatch` works); re-check after a few completed runs.
 - [x] runClient boots; plot assembles, moves, renders, persists (2026-06-13)
 - [x] Save/quit clean — verified across quit-to-title/rejoin cycles (upstream #679 PlotChunkHolder shutdown-leak audit still pending)
 - [ ] GitHub Release `sable-neoforge-*+mc26.1.2`
