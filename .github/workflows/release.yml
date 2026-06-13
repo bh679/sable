@@ -7,9 +7,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/openjdk/jdk:21-ubuntu
-      options: --user root
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
@@ -17,18 +14,18 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: 21
+          # PORT-NOTE(mc26.1): fork builds on Java 25 (MC 26.1 toolchain).
+          java-version: 25
           cache: gradle
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
       - name: Make Gradle Wrapper Executable
         run: chmod +x ./gradlew
       - name: Execute Gradle build
         run: ./gradlew build
+      # PORT-NOTE(mc26.1): fork publishes to GitHub Releases on bh679/sable only
+      # (no CurseForge/Modrinth/Discord — unofficial port; see multiloader-loader.gradle).
       - name: Publish mods
         run: ./gradlew publishMods
         env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
